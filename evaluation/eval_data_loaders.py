@@ -1,4 +1,4 @@
-import pandas as pd
+import polars as pl
 
 from evaluation.evaltypes import EvalDataLoader
 
@@ -19,7 +19,7 @@ class SingleInputSimpleCSV(EvalDataLoader):
             A path pointing to the input file
         """
         super().__init__(file_path)
-        self.data = pd.read_csv(file_path)
+        self.data = pl.read_csv(file_path)
         self._input_data = self.load_input_data()
         self._expected_output = self.load_expected_output()
 
