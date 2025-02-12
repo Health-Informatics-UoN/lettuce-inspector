@@ -1,2 +1,2 @@
 # lettuce-inspector
-An evaluation for pipelines running Lettuce tasks
+An evaluation framework for pipelines running Lettuce tasks

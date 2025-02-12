@@ -1,0 +1,27 @@
+[project]
+name = "lettuce-inspector"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "James Mitchell-White", email = "jamesjimitchell@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=0.6.3",
+    "huggingface-hub>=0.28.1",
+    "llama-cpp-python>=0.3.7",
+    "numpy<2",
+    "pandas>=2.2.3",
+    "rapidfuzz>=3.12.1",
+    "sentence-transformers>=3.4.1",
+    "sqlalchemy>=2.0.38",
+    "torch==2.2",
+]
+
+[project.scripts]
+lettuce-inspector = "lettuce_inspector:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
