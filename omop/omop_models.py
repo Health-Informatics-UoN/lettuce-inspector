@@ -10,7 +10,7 @@ from os import environ
 load_dotenv()
 DB_SCHEMA = environ["DB_SCHEMA"]
 DB_VECTABLE = environ["DB_VECTABLE"]
-DB_VECSIZE = environ["DB_VECSIZE"]
+DB_VECSIZE = int(environ["DB_VECSIZE"])
 
 Base = declarative_base()
 

@@ -177,7 +177,7 @@ def query_related_by_name(
 def query_related_by_id() -> Select: ...
 
 
-def query_vector(query_vector, n: int) -> Select:
+def query_vector(query_vector, n: int = 5) -> Select:
     return (
         select(
             Concept.concept_name.label("content"),
