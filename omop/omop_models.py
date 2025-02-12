@@ -86,7 +86,7 @@ class ConceptAncestor(Base):
     dummy_primary = Column(Integer, primary_key=True)
 
 
-class EmbeddingsTable(Base):
+class Embedding(Base):
     """
     This class represents an ORM mapping to an embeddings table
     """
@@ -96,3 +96,4 @@ class EmbeddingsTable(Base):
 
     concept_id = Column(Integer)
     embedding = mapped_column(Vector(DB_VECSIZE))
+    dummy_primary = Column(Integer, primary_key=True)

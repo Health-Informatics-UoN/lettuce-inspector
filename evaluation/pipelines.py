@@ -1,9 +1,10 @@
 from sentence_transformers import SentenceTransformer
+from sqlalchemy.orm import Session
 from torch.functional import Tensor
 from evaluation.evaltypes import SingleResultPipeline
 from jinja2 import Template
 from llama_cpp import Llama
-from chromadb.api import ClientAPI
+from omop.omop_queries import query_vector
 
 
 class LLMPipeline(SingleResultPipeline):
@@ -71,8 +72,7 @@ class RAGPipeline(SingleResultPipeline):
         prompt_template: Template,
         template_vars: list[str],
         embedding_model: SentenceTransformer,
-        retriever: ClientAPI,
-        collection: str,
+        session: Session,
         top_k: int = 5,
     ) -> None:
         self.llm = llm
@@ -80,15 +80,15 @@ class RAGPipeline(SingleResultPipeline):
         self._llmodel = llm
         self._embedding_model = embedding_model
         self._template_vars = template_vars
-        self._retriever = retriever
-        self._collection = retriever.get_collection(collection)
         self._top_k = top_k
+        self._session = session
 
     def run(self, input: list[str]) -> str:
         embedding = self._embedding_model.encode(input[0])
-        search_results = self._collection.query(
-            query_embeddings=embedding, n_results=self._top_k
-        )
+        search_query = query_vector(embedding, self._top_k)
+        search_results = {
+            "documents": self._session.execute(search_query).mappings().all()
+        }
         prompt = self.prompt_template.render(
             dict(zip(self._template_vars, [*input, search_results["documents"]]))
         )
