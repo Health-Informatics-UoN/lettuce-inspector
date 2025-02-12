@@ -554,6 +554,8 @@ dependencies = [
     { name = "llama-cpp-python" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "pgvector" },
+    { name = "psycopg2" },
     { name = "rapidfuzz" },
     { name = "sentence-transformers" },
     { name = "sqlalchemy" },
@@ -567,6 +569,8 @@ requires-dist = [
     { name = "llama-cpp-python", specifier = ">=0.3.7" },
     { name = "numpy", specifier = "<2" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "pgvector", specifier = ">=0.3.6" },
+    { name = "psycopg2", specifier = ">=2.9.10" },
     { name = "rapidfuzz", specifier = ">=3.12.1" },
     { name = "sentence-transformers", specifier = ">=3.4.1" },
     { name = "sqlalchemy", specifier = ">=2.0.38" },
@@ -1095,6 +1099,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pgvector"
+version = "0.3.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7d/d8/fd6009cee3e03214667df488cdcf9609461d729968da94e4f95d6359d304/pgvector-0.3.6.tar.gz", hash = "sha256:31d01690e6ea26cea8a633cde5f0f55f5b246d9c8292d68efdef8c22ec994ade", size = 25421 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fb/81/f457d6d361e04d061bef413749a6e1ab04d98cfeec6d8abcfe40184750f3/pgvector-0.3.6-py3-none-any.whl", hash = "sha256:f6c269b3c110ccb7496bac87202148ed18f34b390a0189c783e351062400a75a", size = 24880 },
+]
+
+[[package]]
 name = "pillow"
 version = "11.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1160,6 +1176,17 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4f/06/7c467744d23c3979ce250397e26d8ad8eeb2bea7b18ca12ad58313c1b8d5/protobuf-5.29.3-cp38-abi3-manylinux2014_aarch64.whl", hash = "sha256:daaf63f70f25e8689c072cfad4334ca0ac1d1e05a92fc15c54eb9cf23c3efd84", size = 319573 },
     { url = "https://files.pythonhosted.org/packages/a8/45/2ebbde52ad2be18d3675b6bee50e68cd73c9e0654de77d595540b5129df8/protobuf-5.29.3-cp38-abi3-manylinux2014_x86_64.whl", hash = "sha256:c027e08a08be10b67c06bf2370b99c811c466398c357e615ca88c91c07f0910f", size = 319672 },
     { url = "https://files.pythonhosted.org/packages/fd/b2/ab07b09e0f6d143dfb839693aa05765257bceaa13d03bf1a696b78323e7a/protobuf-5.29.3-py3-none-any.whl", hash = "sha256:0a18ed4a24198528f2333802eb075e59dea9d679ab7a6c5efb017a59004d849f", size = 172550 },
+]
+
+[[package]]
+name = "psycopg2"
+version = "2.9.10"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/62/51/2007ea29e605957a17ac6357115d0c1a1b60c8c984951c19419b3474cdfd/psycopg2-2.9.10.tar.gz", hash = "sha256:12ec0b40b0273f95296233e8750441339298e6a572f7039da5b260e3c8b60e11", size = 385672 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3d/16/4623fad6076448df21c1a870c93a9774ad8a7b4dd1660223b59082dd8fec/psycopg2-2.9.10-cp312-cp312-win32.whl", hash = "sha256:65a63d7ab0e067e2cdb3cf266de39663203d38d6a8ed97f5ca0cb315c73fe067", size = 1025113 },
+    { url = "https://files.pythonhosted.org/packages/66/de/baed128ae0fc07460d9399d82e631ea31a1f171c0c4ae18f9808ac6759e3/psycopg2-2.9.10-cp312-cp312-win_amd64.whl", hash = "sha256:4a579d6243da40a7b3182e0430493dbd55950c493d8c68f4eec0b302f6bbf20e", size = 1163951 },
+    { url = "https://files.pythonhosted.org/packages/ae/49/a6cfc94a9c483b1fa401fbcb23aca7892f60c7269c5ffa2ac408364f80dc/psycopg2-2.9.10-cp313-cp313-win_amd64.whl", hash = "sha256:91fd603a2155da8d0cfcdbf8ab24a2d54bca72795b90d2a3ed2b6da8d979dee2", size = 2569060 },
 ]
 
 [[package]]

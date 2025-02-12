@@ -1,5 +1,7 @@
 from sentence_transformers import SentenceTransformer
 from jinja2 import Environment
+from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
+from haystack_integrations.components.retrievers.qdrant import QdrantEmbeddingRetriever
 
 from evaluation.evaltypes import EvaluationFramework
 from evaluation.metrics import (
@@ -13,11 +15,13 @@ from components.models import local_models
 from evaluation.pipelines import LLMPipeline, RAGPipeline
 from evaluation.eval_tests import LLMPipelineTest, RAGPipelineTest
 from evaluation.eval_data_loaders import SingleInputCSVforLLM
+from omop.db_manager import db_session
 from llama_cpp import Llama
 from huggingface_hub import hf_hub_download
-from chromadb import PersistentClient
 
 dataset = SingleInputCSVforLLM("evaluation/datasets/EU_test_set.csv")
+
+db_connection = db_session()
 
 description = """
 A test of increasing the number of suggestions included in a RAG prompt.
@@ -47,8 +51,10 @@ llm = Llama(
     generation_kwargs={"max_tokens": 128, "temperature": 0},
 )
 embedding_model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-
-retriever = PersistentClient("chroma_db")
+store = QdrantDocumentStore(
+    path="concept_embeddings.qdrant", embedding_dim=384, recreate_index=False
+)
+retriever = QdrantEmbeddingRetriever(store)
 template_env = Environment()
 llm_prompt_template = template_env.from_string(
     """You are an assistant that suggests formal RxNorm names for a medication. You will be given the name of a medication, along with some possibly related RxNorm terms. If you do not think these terms are related, ignore them when making your suggestion.
@@ -146,7 +152,6 @@ rag_5 = RAGPipeline(
     template_vars=template_vars,
     embedding_model=embedding_model,
     retriever=retriever,
-    collection="omop",
 )
 
 rag_5_with_score = RAGPipeline(
@@ -155,7 +160,6 @@ rag_5_with_score = RAGPipeline(
     template_vars=template_vars,
     embedding_model=embedding_model,
     retriever=retriever,
-    collection="omop",
 )
 
 rag_10 = RAGPipeline(
@@ -165,7 +169,6 @@ rag_10 = RAGPipeline(
     embedding_model=embedding_model,
     retriever=retriever,
     top_k=10,
-    collection="omop",
 )
 
 rag_10_with_score = RAGPipeline(
@@ -175,7 +178,6 @@ rag_10_with_score = RAGPipeline(
     embedding_model=embedding_model,
     retriever=retriever,
     top_k=10,
-    collection="omop",
 )
 
 rag_20 = RAGPipeline(
@@ -185,7 +187,6 @@ rag_20 = RAGPipeline(
     embedding_model=embedding_model,
     retriever=retriever,
     top_k=20,
-    collection="omop",
 )
 
 rag_20_with_score = RAGPipeline(
@@ -195,14 +196,13 @@ rag_20_with_score = RAGPipeline(
     embedding_model=embedding_model,
     retriever=retriever,
     top_k=20,
-    collection="omop",
 )
 
 metrics = [
     UncasedMatch(),
     FuzzyMatchRatio(),
-    RelatedNameUncasedMatch(),
-    AncestorNameUncasedMatch(),
+    RelatedNameUncasedMatch(db_connection),
+    AncestorNameUncasedMatch(db_connection),
 ]
 
 tests = [

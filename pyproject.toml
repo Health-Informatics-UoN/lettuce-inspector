@@ -13,6 +13,8 @@ dependencies = [
     "llama-cpp-python>=0.3.7",
     "numpy<2",
     "pandas>=2.2.3",
+    "pgvector>=0.3.6",
+    "psycopg2>=2.9.10",
     "rapidfuzz>=3.12.1",
     "sentence-transformers>=3.4.1",
     "sqlalchemy>=2.0.38",
