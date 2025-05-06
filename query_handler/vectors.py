@@ -7,23 +7,22 @@ from typing import List
 from .handler_type import ConceptIDQueryHandler
 
 class SimilarityFunction(Enum):
-    # Changed to use consistent naming of functions and directions
     EUCLIDEAN = ("array_distance", "ASC")  # Lower distance is better
     COSINE_DISTANCE = ("array_cosine_distance", "ASC")  # Lower distance is better
     COSINE_SIMILARITY = ("array_cosine_similarity", "DESC")  # Higher similarity is better
     INNER = ("array_negative_inner_product", "ASC")  # Lower negative product is better
 
 
-class ParquetFileVectorReader(ConceptIDQueryHandler):
+class ParquetFileVectorSearcher(ConceptIDQueryHandler):
     def __init__(self,
-                 file_path: str,  # Changed to str for better type hinting
+                 file_path: str,
                  model: SentenceTransformer,
-                 similarity_function: SimilarityFunction=SimilarityFunction.COSINE_DISTANCE,  # Changed default
+                 similarity_function: SimilarityFunction=SimilarityFunction.COSINE_DISTANCE,
                  top_k: int=10,
-                 vector_dimension: int=384,  # Added dimension parameter
-                 vector_type: str="DOUBLE"  # Added type parameter (FLOAT vs DOUBLE)
+                 vector_dimension: int=384,
+                 vector_type: str="DOUBLE"
                  ) -> None:
-        self._path = os.path.expanduser(file_path)  # Handle ~ in paths
+        self._path = os.path.expanduser(file_path)
         self._model = model
         self._sim = similarity_function
         self._top_k = top_k
