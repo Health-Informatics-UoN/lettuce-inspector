@@ -42,5 +42,14 @@ class BmFileSearcher(ConceptIDQueryHandler):
     """
 
     def search(self, queries: List[str] | str) -> List[List[int]]:
-        return [self._db.sql(self.bm25_query(q)) for q in queries]
+        if isinstance(queries, str):
+            queries = [queries]
+
+        results = []
+        for query in queries:
+            result = self._db.sql(self.bm25_query(query)).fetchall()
+            concept_ids = [res[0] for res in result]
+            results.append(concept_ids)
+        
+        return results
         
