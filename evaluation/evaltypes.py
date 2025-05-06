@@ -4,7 +4,7 @@ from typing import TypeVar, Generic, Any, List
 import json
 import os
 
-
+# Base classes for Metrics, Pipelines, and Tests
 class Metric(ABC):
     """Base class for all metrics."""
 
@@ -77,14 +77,22 @@ class SingleResultMetric(Metric):
 class InformationRetrievalMetric(Metric):
     """Metric for evaluating information retrieval pipelines."""
 
-    pass
-
 
 class SingleResultPipeline(TestPipeline):
     """
     Base class for pipelines returning a single result
     """
+    @abstractmethod
+    def run(self, *args, **kwargs) -> str:
+        pass
 
+class InformationRetrievalPipeline(TestPipeline):
+    """
+    A pipeline for performing information retrieval tasks.
+    """
+    @abstractmethod
+    def run(self, *args, **kwargs) -> List[str]:
+        pass
 
 class SingleResultPipelineTest(PipelineTest[SingleResultPipeline, SingleResultMetric]):
     def __init__(
