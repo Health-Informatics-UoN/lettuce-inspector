@@ -1,11 +1,13 @@
 from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import Session
 from torch.functional import Tensor
-from evaluation.evaltypes import SingleResultPipeline
+from evaluation.evaltypes import SingleResultPipeline, InformationRetrievalPipeline
 from jinja2 import Template
 from llama_cpp import Llama
 from omop.omop_queries import query_vector
+from typing import List
 
+from query_handler.handler_type import ConceptIDQueryHandler
 
 class LLMPipeline(SingleResultPipeline):
     """
@@ -64,6 +66,20 @@ class EmbeddingsPipeline(SingleResultPipeline):
     def run(self, input: str) -> Tensor:
         return self.model.encode(input)
 
+class DBRankRetrievalPipeline(InformationRetrievalPipeline):
+    def __init__(self, retriever: ConceptIDQueryHandler) -> None:
+        self._retriever = retriever
+
+    def run(self, query: str) -> List[int]:
+        return self._retriever.search([query])[0]
+
+class EmbeddingsRetrievalPipeline(InformationRetrievalPipeline):
+    def __init__(self, embedding_model: SentenceTransformer, retriever: ConceptIDQueryHandler) -> None:
+        self._model = embedding_model
+        self._retriever = retriever
+
+    def run(self, query: str) -> List[int]:
+        return self._retriever.search([query])[0]
 
 class RAGPipeline(SingleResultPipeline):
     def __init__(
@@ -85,6 +101,8 @@ class RAGPipeline(SingleResultPipeline):
 
     def run(self, input: list[str]) -> str:
         embedding = self._embedding_model.encode(input[0])
+        # In future, this could be generalised
+        # We could create a query_handler that fetches from a pgvector enabled database and RAGPipelines could use a generic query_handler
         search_query = query_vector(embedding, self._top_k)
         search_results = {
             "documents": self._session.execute(search_query).mappings().all()

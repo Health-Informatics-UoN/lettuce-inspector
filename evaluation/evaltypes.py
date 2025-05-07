@@ -83,7 +83,7 @@ class SingleResultPipeline(TestPipeline):
     Base class for pipelines returning a single result
     """
     @abstractmethod
-    def run(self, *args, **kwargs) -> str:
+    def run(self, *args, **kwargs) -> Any:
         pass
 
 class InformationRetrievalPipeline(TestPipeline):
@@ -91,7 +91,7 @@ class InformationRetrievalPipeline(TestPipeline):
     A pipeline for performing information retrieval tasks.
     """
     @abstractmethod
-    def run(self, *args, **kwargs) -> List[str]:
+    def run(self, *args, **kwargs) -> List[Any]:
         pass
 
 class SingleResultPipelineTest(PipelineTest[SingleResultPipeline, SingleResultMetric]):
