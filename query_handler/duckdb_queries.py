@@ -6,7 +6,7 @@ class SimilarityFunction(Enum):
     EUCLIDEAN = ("array_distance", "ASC")  # Lower distance is better
     COSINE_DISTANCE = ("array_cosine_distance", "ASC")  # Lower distance is better
     COSINE_SIMILARITY = ("array_cosine_similarity", "DESC")  # Higher similarity is better
-    INNER = ("array_negative_inner_product", "ASC")  # Lower negative product is betterrom query_handler.vectors import SimilarityFunction
+    INNER = ("array_negative_inner_product", "ASC")  # Lower negative product is better
 
 def vector_search(
         con: duckdb.DuckDBPyConnection,
@@ -62,7 +62,7 @@ def rrf_query(
         query: str,
         rrf_top_k: int,
         ) -> duckdb.DuckDBPyRelation:
-    function_name, _ = similarity_function.value
+    function_name, direction = similarity_function.value
     return con.sql(f"""
                     WITH fts AS (
                         SELECT concept_id, fts_main_concepts.match_bm25(
@@ -79,14 +79,19 @@ def rrf_query(
                             $embedding::{vector_type}[{vector_dim}]
                             ) AS score
                             FROM vectors
+                    ),
+                    ranks AS (
+                        SELECT
+                            fts.concept_id,
+                            rank() OVER (ORDER BY fts.score DESC) as fts_rank,
+                            rank() OVER (ORDER BY vs.score {direction}) as vs_rank
+                        FROM fts
+                        FULL OUTER JOIN vs ON fts.concept_id = vs.concept_id
                     )
                     SELECT
-                        fts.concept_id,
-                        fts.score AS fts_score,
-                        vs.score AS vs_score,
-                        rrf(fts.score) + rrf(vs.score) AS rrf_score
-                    FROM fts
-                    INNER JOIN vs ON fts.concept_id = vs.concept_id
+                        concept_id,
+                        rrf(fts_rank) + rrf(vs_rank) AS rrf_score
+                    FROM ranks
                     ORDER BY rrf_score DESC
                     LIMIT $rrf_top_k
                     """,
