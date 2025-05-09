@@ -478,6 +478,33 @@ class RelatedIDPrecision(InformationRetrievalMetric):
     def description(self) -> str:
         return self._description
 
+class RelatedIDRecall(InformationRetrievalMetric):
+    def __init__(
+            self,
+            connection: Session,
+            vocabulary_ids: list[str]
+            ) -> None:
+        self._description = "Related concept id recall: Calculates recall, where the set of relevant instances is the concept's relatives"
+        self._connection = connection
+        self._vocabulary_ids = vocabulary_ids
+
+    def calculate(self, predicted: list[int], actual: str) -> float:
+        query = query_related_by_name(
+            actual,
+            self._vocabulary_ids,
+        )
+        related_concepts = self._connection.execute(query).fetchall()
+        related_ids = set(result[0].concept_id for result in related_concepts)
+        print(actual)
+        if len(related_ids) > 0:
+            return calc_recall(list(related_ids), predicted)
+        else:
+            print(f"Warning: no related_ids found for {actual}")
+            return 0
+    @property
+    def description(self) -> str:
+        return self._description
+
 class IDMatchInList(InformationRetrievalMetric):
     def __init__(
             self,
