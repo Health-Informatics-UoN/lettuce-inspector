@@ -6,7 +6,7 @@ from evaluation.evaltypes import SingleResultMetric, InformationRetrievalMetric
 from rapidfuzz import fuzz
 import numpy as np
 
-from omop.omop_queries import query_ancestors_by_name, query_related_by_name
+from omop.omop_queries import query_ancestors_by_name, query_related_by_name, query_ids_matching_name
 
 
 # ------ Single Result Metrics ------
@@ -434,7 +434,7 @@ class RelatedNamePrecision(InformationRetrievalMetric):
         max_separation_bound: int|None
             An upper bound for maximum level of separation
         """
-        self._description = "Related concept name precision: Calculates precision, where the set of relevant instances is the concept's ancestors"
+        self._description = "Related concept name precision: Calculates precision, where the set of relevant instances is the concept's relatives"
         self._connection = connection
         self._vocabulary_ids = vocabulary_ids
 
@@ -448,6 +448,51 @@ class RelatedNamePrecision(InformationRetrievalMetric):
 
         return calc_precision(list(related_names), predicted)
 
+    @property
+    def description(self) -> str:
+        return self._description
+
+class RelatedIDPrecision(InformationRetrievalMetric):
+    def __init__(
+            self,
+            connection: Session,
+            vocabulary_ids: list[str]
+            ) -> None:
+        self._description = "Related concept id precision: Calculates precision, where the set of relevant instances is the concept's relatives"
+        self._connection = connection
+        self._vocabulary_ids = vocabulary_ids
+
+    def calculate(self, predicted: list[int], actual: str) -> float:
+        query = query_related_by_name(
+            actual,
+            self._vocabulary_ids,
+        )
+        related_concepts = self._connection.execute(query).fetchall()
+        related_ids = set(result[0].concept_id for result in related_concepts)
+        print(actual)
+        if len(predicted) > 0:
+            return calc_precision(list(related_ids), predicted)
+        else:
+            return 0
+    @property
+    def description(self) -> str:
+        return self._description
+
+class IDMatchInList(InformationRetrievalMetric):
+    def __init__(
+            self,
+            connection: Session,
+            vocabulary_ids: list[str]
+            ) -> None:
+        self._description = "Concept ID match in list: Calculates whether the desired concept_id is in the retrieved list"
+        self._connection = connection
+        self._vocabulary_ids = vocabulary_ids
+
+    def calculate(self, predicted: list[int], actual: str) -> float:
+        actual_rows = self._connection.execute(query_ids_matching_name(actual, self._vocabulary_ids)).fetchall()
+        actual_ids = [res[0] for res in actual_rows]
+        return len(set(actual_ids).intersection(predicted)) != 0
+    
     @property
     def description(self) -> str:
         return self._description

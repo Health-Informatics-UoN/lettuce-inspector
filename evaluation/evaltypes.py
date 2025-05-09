@@ -55,7 +55,7 @@ class PipelineTest(Generic[P, M]):
         self.metrics = metrics
 
     @abstractmethod
-    def run_pipeline(self, *args, **kwargs):
+    def run_pipeline(self, *args, **kwargs) -> List[Any]:
         pass
 
     @abstractmethod
@@ -135,6 +135,26 @@ class SingleResultPipelineTest(PipelineTest[SingleResultPipeline, SingleResultMe
             for metric in self.metrics
         }
 
+class InformationRetrievalPipelineTest(PipelineTest[InformationRetrievalPipeline, InformationRetrievalMetric]):
+    def __init__(
+            self,
+            name: str,
+            pipeline: InformationRetrievalPipeline,
+            metrics: list[InformationRetrievalMetric],
+            ) -> None:
+        super().__init__(name, pipeline, metrics)
+
+    def run_pipeline(self, input_data):
+        return self.pipeline.run(input_data)
+
+    def evaluate(self, input_data, expected_output) -> dict[str, float]:
+        pipeline_output = self.run_pipeline(input_data)
+        return {
+                metric.__class__.__name__: metric.calculate(
+                    pipeline_output, expected_output
+                    )
+                for metric in self.metrics
+                }
 
 class EvalDataLoader(ABC):
     """
