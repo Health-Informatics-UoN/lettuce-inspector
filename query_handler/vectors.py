@@ -11,12 +11,14 @@ class ParquetFileVectorSearcher(ConceptIDQueryHandler):
                  db: duckdb.DuckDBPyConnection,
                  model: SentenceTransformer,
                  similarity_function: SimilarityFunction=SimilarityFunction.COSINE_DISTANCE,
+                 vocabulary_ids: List[str] | None=None,
                  top_k: int=10,
                  vector_dimension: int=384,
                  vector_type: str="DOUBLE"
                  ) -> None:
         self._model = model
         self._sim = similarity_function
+        self._vocabulary_ids = vocabulary_ids
         self._top_k = top_k
         self._vector_dim = vector_dimension
         self._vector_type = vector_type
@@ -35,6 +37,7 @@ class ParquetFileVectorSearcher(ConceptIDQueryHandler):
                     embedding=embedding,
                     vector_type=self._vector_type,
                     vector_dim=self._vector_dim,
+                    vocabulary_ids=self._vocabulary_ids,
                     top_k=self._top_k,
                     ).fetchall()
             concept_ids = [r[0] for r in result]
@@ -47,12 +50,14 @@ class ReciprocalRankFusionSearcher(ConceptIDQueryHandler):
                  db: duckdb.DuckDBPyConnection,
                  model: SentenceTransformer,
                  similarity_function: SimilarityFunction=SimilarityFunction.COSINE_DISTANCE,
+                 vocabulary_ids: List[str] | None=None,
                  top_k: int=10,
                  vector_dimension: int=384,
                  vector_type: str="DOUBLE"
                  ) -> None:
         self._model = model
         self._sim = similarity_function
+        self._vocabulary_ids = vocabulary_ids
         self._top_k = top_k
         self._vector_dim = vector_dimension
         self._vector_type = vector_type
@@ -76,6 +81,7 @@ class ReciprocalRankFusionSearcher(ConceptIDQueryHandler):
                     con=self._db,
                     similarity_function=self._sim,
                     embedding=embedding,
+                    vocabulary_ids=self._vocabulary_ids,
                     vector_type=self._vector_type,
                     vector_dim=self._vector_dim,
                     query=query,
