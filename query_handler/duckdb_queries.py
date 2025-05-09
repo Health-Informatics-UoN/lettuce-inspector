@@ -16,6 +16,8 @@ def vector_search(
         vector_dim: int,
         top_k: int,
         ) -> duckdb.DuckDBPyRelation:
+    if len(embedding) != vector_dim:
+        raise ValueError(f"Expected embedding dimension {vector_dim}, got {len(embedding)}")
     function_name, direction = similarity_function.value
     return con.sql(f"""
                    SELECT concept_id,

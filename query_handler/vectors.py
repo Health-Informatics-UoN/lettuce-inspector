@@ -28,7 +28,7 @@ class ParquetFileVectorSearcher(ConceptIDQueryHandler):
         
         results = []
         for query in queries:
-            embedding = self._model.encode(query)
+            embedding = self._model.encode(query)[0]
             result = vector_search(
                     con=self._db,
                     similarity_function=self._sim,
@@ -71,7 +71,7 @@ class ReciprocalRankFusionSearcher(ConceptIDQueryHandler):
         
         results = []
         for query in queries:
-            embedding = self._model.encode(query)
+            embedding = self._model.encode(query)[0]
             result = rrf_query(
                     con=self._db,
                     similarity_function=self._sim,
