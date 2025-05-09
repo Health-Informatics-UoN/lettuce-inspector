@@ -41,7 +41,6 @@ def vector_search(
 
     query = f"""
     SELECT vectors.concept_id,
-           vectors.description,
            {function_name}(vectors.embeddings::{vector_type}[{vector_dim}], 
                             $embedding::{vector_type}[{vector_dim}]) as score
     FROM vectors
