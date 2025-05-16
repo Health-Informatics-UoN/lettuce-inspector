@@ -269,4 +269,4 @@ class EvaluationFramework:
             previous_runs = [new_data]
 
         with open(self._results_path, "w") as f:
-            json.dump(previous_runs, f)
+            json.dump(previous_runs, f, indent=2)
