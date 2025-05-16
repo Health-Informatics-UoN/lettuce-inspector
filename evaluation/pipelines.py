@@ -113,3 +113,37 @@ class RAGPipeline(SingleResultPipeline):
         reply = self._llmodel.create_completion(prompt=prompt)["choices"][0]["text"]
         print(f"Replied {reply} for {input}")
         return reply
+
+class AugmentedQueryPipeline(InformationRetrievalPipeline):
+    def __init__(
+            self,
+            prompt_template: Template,
+            llm: Llama,
+            template_vars: List[str],
+            retriever: ConceptIDQueryHandler,
+            ) -> None:
+        self._prompt_template = prompt_template
+        self._llmodel = llm
+        self._template_vars = template_vars
+        self._retriever = retriever
+
+    def run(self, input: List[str]) -> List[int]:
+        prompt = self._prompt_template.render(
+                {"informal_name": input}
+                )
+        print(prompt)
+        reply = self._llmodel.create_chat_completion(
+            messages = [
+                    {
+                        "role": "system",
+                        "content": """You are an assistant that suggests terms for semantic search.
+Respond only with a suggestion similar to a standardised term for the informal name, without any extra explanation. For example, if given the name of the medication, give your best guess for the medication's formal name.
+If you are given a formal name, just echo it"""},
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )["choices"][0]["message"]["content"]
+        print(reply)
+        return self._retriever.search([reply])[0]
