@@ -4,7 +4,7 @@ from typing import TypeVar, Generic, Any, List
 import json
 import os
 
-
+# Base classes for Metrics, Pipelines, and Tests
 class Metric(ABC):
     """Base class for all metrics."""
 
@@ -55,7 +55,7 @@ class PipelineTest(Generic[P, M]):
         self.metrics = metrics
 
     @abstractmethod
-    def run_pipeline(self, *args, **kwargs):
+    def run_pipeline(self, *args, **kwargs) -> List[Any]:
         pass
 
     @abstractmethod
@@ -77,14 +77,22 @@ class SingleResultMetric(Metric):
 class InformationRetrievalMetric(Metric):
     """Metric for evaluating information retrieval pipelines."""
 
-    pass
-
 
 class SingleResultPipeline(TestPipeline):
     """
     Base class for pipelines returning a single result
     """
+    @abstractmethod
+    def run(self, *args, **kwargs) -> Any:
+        pass
 
+class InformationRetrievalPipeline(TestPipeline):
+    """
+    A pipeline for performing information retrieval tasks.
+    """
+    @abstractmethod
+    def run(self, *args, **kwargs) -> List[Any]:
+        pass
 
 class SingleResultPipelineTest(PipelineTest[SingleResultPipeline, SingleResultMetric]):
     def __init__(
@@ -127,6 +135,26 @@ class SingleResultPipelineTest(PipelineTest[SingleResultPipeline, SingleResultMe
             for metric in self.metrics
         }
 
+class InformationRetrievalPipelineTest(PipelineTest[InformationRetrievalPipeline, InformationRetrievalMetric]):
+    def __init__(
+            self,
+            name: str,
+            pipeline: InformationRetrievalPipeline,
+            metrics: list[InformationRetrievalMetric],
+            ) -> None:
+        super().__init__(name, pipeline, metrics)
+
+    def run_pipeline(self, input_data):
+        return self.pipeline.run(input_data)
+
+    def evaluate(self, input_data, expected_output) -> dict[str, float]:
+        pipeline_output = self.run_pipeline(input_data)
+        return {
+                metric.__class__.__name__: metric.calculate(
+                    pipeline_output, expected_output
+                    )
+                for metric in self.metrics
+                }
 
 class EvalDataLoader(ABC):
     """
@@ -241,4 +269,4 @@ class EvaluationFramework:
             previous_runs = [new_data]
 
         with open(self._results_path, "w") as f:
-            json.dump(previous_runs, f)
+            json.dump(previous_runs, f, indent=2)

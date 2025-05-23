@@ -27,6 +27,7 @@ class Concept(Base):
     concept_name = Column(String)
     vocabulary_id = Column(String)
     concept_code = Column(String)
+    domain_id = Column(String)
     standard_concept = Column(String)
 
     def __repr__(self) -> str:

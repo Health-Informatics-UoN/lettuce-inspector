@@ -1,3 +1,4 @@
+from typing import List
 from omop.omop_models import (
     Concept,
     ConceptRelationship,
@@ -100,6 +101,14 @@ def query_ids_matching_name(query_concept, vocabulary_ids: list[str] | None) -> 
     else:
         return base_query
 
+def query_ids_matching_id(query_concept_id: int, vocabulary_ids: list[str] | None) -> Select:
+    base_query = select(
+        Concept.concept_id,
+    ).where(Concept.concept_id == query_concept_id)
+    if vocabulary_ids:
+        return base_query.where(Concept.vocabulary_id.in_(vocabulary_ids))
+    else:
+        return base_query
 
 def query_ancestors_by_name(
     query_concept: str,
@@ -174,7 +183,20 @@ def query_related_by_name(
     )
 
 
-def query_related_by_id() -> Select: ...
+def query_related_by_id(
+        query_concept_id: int, vocabulary_ids: List[str] | None
+        ) -> Select:
+    matching_ids = query_ids_matching_id(query_concept_id, vocabulary_ids).cte()
+    return (
+            select(Concept)
+            .join(
+                ConceptRelationship, ConceptRelationship.concept_id_2 == Concept.concept_id
+                )
+            .join(
+                matching_ids,
+                ConceptRelationship.concept_id_1 == matching_ids.c.concept_id
+                )
+            )
 
 
 def query_vector(query_vector, n: int = 5) -> Select:
