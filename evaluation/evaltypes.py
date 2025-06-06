@@ -1,9 +1,14 @@
 from abc import ABC, abstractmethod
 import time
-from typing import TypeVar, Generic, Any, List
+from typing import TypeVar, Generic, Any, List, Union 
 import json
 import os
+from jinja2 import Environment 
 
+from evaluation.mlflow_evaluation import EvaluationMLflowLogger
+
+
+jinja_env = Environment()
 
 class Metric(ABC):
     """Base class for all metrics."""
@@ -84,6 +89,18 @@ class SingleResultPipeline(TestPipeline):
     """
     Base class for pipelines returning a single result
     """
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Safely remove compiled prompt_template if it exists
+        if "prompt_template" in state:
+            del state["prompt_template"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # Recompile prompt_template if prompt_template_str exists
+        if hasattr(self, "prompt_template_str") and self.prompt_template_str:
+            self.prompt_template = jinja_env.from_string(self.prompt_template_str)
 
 
 class SingleResultPipelineTest(PipelineTest[SingleResultPipeline, SingleResultMetric]):
@@ -175,6 +192,8 @@ class EvaluationFramework:
         dataset: EvalDataLoader,
         description: str,
         results_path: str = "results.json",
+        use_mlflow: bool = True, 
+        experiment_name: str = "lettuce-evalution"
     ):
         """
         Initialises the EvaluationFramework
@@ -198,6 +217,9 @@ class EvaluationFramework:
         self._results_path = results_path
         self.input_data = dataset.input_data
         self.expected_output = dataset.expected_output
+        self.use_mlflow = use_mlflow
+        if self.use_mlflow:
+            self.mlflow_logger = EvaluationMLflowLogger(experiment_name=experiment_name)
 
     def run_evaluations(self):
         """
@@ -221,6 +243,9 @@ class EvaluationFramework:
             )
 
         self._save_evaluations()
+
+        if self.use_mlflow:
+            self.mlflow_logger.log_evaluation_run(self)
 
     def _save_evaluations(self):
         """
