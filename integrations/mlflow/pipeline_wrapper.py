@@ -4,33 +4,40 @@ Wrapper around mlflow's PythonModel
 import pandas as pd 
 import mlflow
 
-from evaluation.evaltypes import SingleResultPipeline 
 
-
-class MLflowPipelineWrapper(mlflow.pyfunc.PythonModel): 
+class MLflowPipelineWrapper(mlflow.pyfunc.PythonModel):
     """
-    Wrapper class around PythonModel. 
+    Wrapper to make lettuce pipelines compatible with MLflow's model interface. 
     """
 
-    def __init__(self, pipeline: SingleResultPipeline):
+    def __init__(self, pipeline, pipeline_type):
         super().__init__()
         self.pipeline = pipeline 
+        self.pipeline_type = pipeline_type 
 
-    def predict(self, model_input: pd.DataFrame, params = None):
+    def predict(self, model_input: pd.DataFrame, params=None):
         """
-        Override of the predict method. 
-        
-        Assumes that the model input will be a Pandas dataframe. 
+        Predict method expected by MLflow. 
 
         Args:
-            model_input: pd.DataFrame 
-                Input data, should have fields 'model_input' and 'expected_output'. 
-        """
+            model_input: DataFrame with input data 
 
+        Returns:
+            DataFrame with predictions 
+        """
         predictions = []
+
+        if "input_data" not in model_input.columns: 
+            raise ValueError("The column input_data must be present")
+        
+        for _, row in model_input.iterrows(): 
+            input_data = row["input_data"]
+            if isinstance(input_data, str): 
+                input_data = [input_data]
+            else: 
+                raise TypeError("Search terms in input_data must be strings!")
+            prediction = self.pipeline.run(input_data)
+            predictions.append(prediction)
         breakpoint()
-        for X_, _ in model_input.iterrows():
-            y_pred = self.pipeline.run(X_)
-            predictions.append(y_pred)
-    
-        return pd.DataFrame(predictions, columns=["predictions"])
+
+        return pd.DataFrame({"predictions": predictions})
