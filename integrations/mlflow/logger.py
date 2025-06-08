@@ -1,3 +1,4 @@
+import pandas as pd 
 import mlflow 
 from mlflow.models import infer_signature
 
@@ -23,7 +24,7 @@ class MLflowLogger():
     def log_metrics(self): 
         pass 
 
-    def log_evaluation_run(self): 
+    def log_evaluation_run(self, eval_df: pd.DataFrame): 
         with mlflow.start_run() as run: 
             model = MLflowPipelineWrapper(pipeline, pipeline_type)
             signature = infer_signature(X_test, model.predict(X_test))
