@@ -38,6 +38,5 @@ class MLflowPipelineWrapper(mlflow.pyfunc.PythonModel):
                 raise TypeError("Search terms in input_data must be strings!")
             prediction = self.pipeline.run(input_data)
             predictions.append(prediction)
-        breakpoint()
 
         return pd.DataFrame({"predictions": predictions})

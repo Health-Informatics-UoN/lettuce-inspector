@@ -1,4 +1,3 @@
-
 import pandas as pd 
 import pytest 
 import mlflow 
@@ -57,12 +56,13 @@ def test_predict_llm_pipeline_wrapper(llama_model, prompt_template_str):
         template_vars=["informal_name"]
     )
     wrapper = MLflowPipelineWrapper(pipeline, pipeline_type="llm")
-    model_input = pd.DataFrame(
-        {"input_data": ["paracetamol", "codeine"], 
-         "expected_output": ["acetaminophen", "codeine"]}
-    )
+    model_input = pd.DataFrame({
+        "input_data": ["paracetamol", "codeine"], 
+        "expected_output": ["acetaminophen", "codeine"]
+    })
     predictions = wrapper.predict(model_input=model_input)
-    breakpoint()
+    assert predictions["predictions"].iloc[0].strip().lower() == "acetaminophen"
+    assert predictions["predictions"].iloc[1].strip().lower() == "codeine"
 
 
 def test_error_thrown_if_input_data_not_present(): 
@@ -73,7 +73,7 @@ def test_predict_rag_pipeline_wrapper():
     pass 
 
 
-def test_pyfunc_model_logging(tmp_path): 
+def test_pyfunc_model_logging(tmp_path, llama_model, prompt_template_str): 
     tracking_uri = tmp_path.as_uri()
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment("pyfunc_llm_test")
@@ -92,5 +92,6 @@ def test_pyfunc_model_logging(tmp_path):
         )
         run_id = run.info.run_id 
 
-    logged_model_path = tmp_path / run_id / "artifacts" / "llm_model"
-    assert logged_model_path.exists()
+    model_uri = f"runs:/{run_id}/llm_model"
+    loaded_model = mlflow.pyfunc.load_model(model_uri)
+    assert loaded_model is not None
