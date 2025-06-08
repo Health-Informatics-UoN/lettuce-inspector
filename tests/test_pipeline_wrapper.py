@@ -65,11 +65,11 @@ def test_predict_llm_pipeline_wrapper(llama_model, prompt_template_str):
     assert predictions["predictions"].iloc[1].strip().lower() == "codeine"
 
 
-def test_error_thrown_if_input_data_not_present(): 
+def test_predict_rag_pipeline_wrapper(): 
     pass 
 
 
-def test_predict_rag_pipeline_wrapper(): 
+def test_error_thrown_if_input_data_not_present(): 
     pass 
 
 
