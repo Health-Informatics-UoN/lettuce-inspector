@@ -6,15 +6,11 @@ from mlflow.metrics import make_metric, MetricValue
 from evaluation.metrics import ExactMatch 
 
 
-def exact_match_eval_fn(
-    eval_df, 
-    prediction_col: str = "predictions", 
-    target_col: str = "target"
-) -> MetricValue:
+def exact_match_eval_fn(predictions: pd.Series,  targets: pd.Series) -> MetricValue:
     exact_match = ExactMatch()
     scores = [
         exact_match.calculate(pred, target)
-        for pred, target in zip(eval_df[prediction_col], eval_df[target_col])
+        for pred, target in zip(predictions, targets)
     ]
 
     return MetricValue(
@@ -31,9 +27,3 @@ exact_match_metric = make_metric(
     eval_fn=exact_match_eval_fn, 
     greater_is_better=True 
 )
-
-
-
-
-
-
