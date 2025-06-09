@@ -1,6 +1,8 @@
+from typing import List 
 import pandas as pd 
 import mlflow 
 from mlflow.models import infer_signature
+from mlflow.metrics import MetricValue
 
 from evaluation.evaltypes import SingleResultPipeline
 from integrations.mlflow.pipeline_wrapper import MLflowPipelineWrapper 
@@ -33,22 +35,24 @@ class MLflowEvaluationRunner():
         self, 
         pipeline: SingleResultPipeline, 
         pipeline_type: str, 
-        eval_df: pd.DataFrame
+        eval_df: pd.DataFrame, 
+        metrics: List[MetricValue]
     ): 
         with mlflow.start_run() as run: 
             model = MLflowPipelineWrapper(pipeline, pipeline_type)
+            model
             
             input_example = eval_df.iloc[0]
 
             self.log_dataset()
             
-            self.log_model()
+            self.log_model(model)
             
             result = mlflow.evaluate(
                 model=str(model_path),         
                 data=eval_df,                 
                 targets="targets",               
-                extra_metrics=[exact_match_metric], 
+                extra_metrics=metrics, 
                 evaluator_config={
                     "col_mapping": {
                         "predictions": "predictions", 
