@@ -10,7 +10,7 @@ class LLMModel(str, Enum):
     LLAMA_2_7B = "llama-2-7b-chat"
     LLAMA_3_8B = "llama-3-8b"
     LLAMA_3_70B = "llama-3-70b"
-    GEMMA_7B = "gemma-7b"
+    GEMMA_12B = "gemma-12b"
     LLAMA_3_1_8B = "llama-3.1-8b"
     LLAMA_3_2_3B = "llama-3.2-3b"
     MISTRAL_7B = "mistral-7b"

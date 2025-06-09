@@ -157,6 +157,7 @@ class RAGPipeline(SingleResultPipeline):
         domain_id: List[str] | None = None,
         standard_concept: bool = False,
         top_k: int = 5,
+        verbose: bool = False,
     ) -> None:
         self.llm = llm
         self.prompt_template = prompt_template
@@ -168,6 +169,7 @@ class RAGPipeline(SingleResultPipeline):
         self._standard_concept = standard_concept
         self._top_k = top_k
         self._session = session
+        self._verbose = verbose
 
     def run(self, input: list[str]) -> str:
         embedding = self._embedding_model.encode(input[0])
@@ -184,6 +186,8 @@ class RAGPipeline(SingleResultPipeline):
         prompt = self.prompt_template.render(
             dict(zip(self._template_vars, [*input, search_results["documents"]]))
         )
+        if self._verbose:
+            print(prompt)
         reply = self._llmodel.create_completion(prompt=prompt)["choices"][0]["text"]
         print(f"Replied {reply} for {input}")
         return reply
