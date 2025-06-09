@@ -115,3 +115,4 @@ def test_exact_match_metric_with_mlflow_evaluate(
     assert "exact_match_eval_fn/mean" in result.metrics
     assert "exact_match_eval_fn/variance" in result.metrics
     assert "exact_match_eval_fn/median" in result.metrics
+    
