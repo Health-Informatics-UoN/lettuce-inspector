@@ -1,7 +1,4 @@
 from enum import Enum
-from pydantic import BaseModel
-from components.embeddings import EmbeddingModelName
-
 
 class LLMModel(str, Enum):
     """

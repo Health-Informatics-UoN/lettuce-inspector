@@ -1,8 +1,3 @@
-import logging
-from options.pipeline_options import LLMModel
-import torch
-
-
 local_models = {
     "llama-2-7b-chat": {
         "repo_id": "TheBloke/Llama-2-7B-Chat-GGUF",

@@ -180,9 +180,9 @@ class RelatedNameUncasedMatch(SingleResultMetric):
         related_names = set(
             result[0].concept_name.lower() for result in related_concepts
         )
-        print(related_names)
-        print(predicted)
-        print(float(predicted in related_names))
+        # print(related_names)
+        # print(predicted)
+        # print(float(predicted in related_names))
 
         return float(predicted in related_names)
 
