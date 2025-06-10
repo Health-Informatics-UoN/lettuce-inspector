@@ -19,9 +19,6 @@ class MLflowEvaluationRunner():
         mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(experiment_name)
 
-    def log_model(self, model: MLflowPipelineWrapper): 
-        pass 
-
     def log_dataset(self): 
         pass  
 
@@ -47,30 +44,29 @@ class MLflowEvaluationRunner():
             #    }
             #)
 
+    @staticmethod
+    def log_pipeline(
+        pipeline: SingleResultPipeline, 
+        pipeline_name: str, 
+        pipeline_type: str, 
+        input_example: Optional[pd.DataFrame] = None, 
+        signature: Optional[mlflow.models.ModelSignature] = None,
+        pip_requirements: Optional[dict] = None,
+        code_paths: Optional[List[str]] = None, 
+        registered_model_name: Optional[str] = None    
+    ) -> mlflow.models.model.ModelInfo: 
+        """
+        Log a lettuce pipeline as a MLflow model. 
+        """
+        wrapped_model = MLflowPipelineWrapper(pipeline, pipeline_type)
 
-def log_pipeline(
-    pipeline: SingleResultPipeline, 
-    pipeline_name: str, 
-    pipeline_type: str, 
-    input_example: Optional[pd.DataFrame] = None, 
-    signature: Optional[mlflow.models.ModelSignature] = None,
-    pip_requirements: Optional[dict] = None,
-    code_paths: Optional[List[str]] = None, 
-    registered_model_name: Optional[str] = None    
-) -> mlflow.models.model.ModelInfo: 
-    """
-    Log a lettuce pipeline as a MLflow model. 
-    """
-    wrapped_model = MLflowPipelineWrapper(pipeline, pipeline_type)
+        if signature is None and input_example is not None: 
+            output_example = wrapped_model.predict(None, input_example)
+            signature = mlflow.models.infer_signature(input_example, output_example)
 
-    if signature is None and input_example is not None: 
-        output_example = wrapped_model.predict(None, input_example)
-        signature = mlflow.models.infer_signature(input_example, output_example)
+        if pip_requirements is None:
+            conda_env = generate_pip_requirements()
 
-    if pip_requirements is None:
-        conda_env = generate_pip_requirements()
-
-    with mlflow.start_run(): 
         model_info = mlflow.pyfunc.log_model(
             artifact_path=pipeline_name, 
             python_model=wrapped_model, 
