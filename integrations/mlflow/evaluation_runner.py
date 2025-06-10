@@ -1,11 +1,11 @@
-from typing import List 
+from typing import List, Optional
 import pandas as pd 
 import mlflow 
-from mlflow.models import infer_signature
 from mlflow.metrics import MetricValue
 
 from evaluation.evaltypes import SingleResultPipeline
 from integrations.mlflow.pipeline_wrapper import MLflowPipelineWrapper 
+from integrations.mlflow.utils import generate_pip_requirements
 
 
 class MLflowEvaluationRunner(): 
@@ -20,16 +20,10 @@ class MLflowEvaluationRunner():
         mlflow.set_experiment(experiment_name)
 
     def log_model(self, model: MLflowPipelineWrapper): 
-        mlflow.pyfunc.log_model(
-            artifact_path="llm_model",
-            python_model=model
-        )
+        pass 
 
     def log_dataset(self): 
-        pass 
-
-    def log_metrics(self): 
-        pass 
+        pass  
 
     def run_evaluation(
         self, 
@@ -38,25 +32,71 @@ class MLflowEvaluationRunner():
         eval_df: pd.DataFrame, 
         metrics: List[MetricValue]
     ): 
-        with mlflow.start_run() as run: 
-            model = MLflowPipelineWrapper(pipeline, pipeline_type)
-            model
-            
-            input_example = eval_df.iloc[0]
+        pass 
+        # with mlflow.start_run() as run: 
+            #result = mlflow.evaluate(
+            #    model=str(model_path),         
+            #    data=eval_df,                 
+            #    targets="targets",               
+            #    extra_metrics=metrics, 
+            #    evaluator_config={
+            #        "col_mapping": {
+            #            "predictions": "predictions", 
+            #            "targets": "targets"          
+            #        }
+            #    }
+            #)
 
-            self.log_dataset()
-            
-            self.log_model(model)
-            
-            result = mlflow.evaluate(
-                model=str(model_path),         
-                data=eval_df,                 
-                targets="targets",               
-                extra_metrics=metrics, 
-                evaluator_config={
-                    "col_mapping": {
-                        "predictions": "predictions", 
-                        "targets": "targets"          
-                    }
-                }
+
+def log_pipeline(
+    pipeline: SingleResultPipeline, 
+    pipeline_name: str, 
+    pipeline_type: str, 
+    input_example: Optional[pd.DataFrame] = None, 
+    signature: Optional[mlflow.models.ModelSignature] = None,
+    pip_requirements: Optional[dict] = None,
+    code_paths: Optional[List[str]] = None, 
+    registered_model_name: Optional[str] = None    
+) -> mlflow.models.model.ModelInfo: 
+    """
+    Log a lettuce pipeline as a MLflow model. 
+    """
+    wrapped_model = MLflowPipelineWrapper(pipeline, pipeline_type)
+
+    if signature is None and input_example is not None: 
+        output_example = wrapped_model.predict(None, input_example)
+        signature = mlflow.models.infer_signature(input_example, output_example)
+
+    if pip_requirements is None:
+        conda_env = generate_pip_requirements()
+
+    with mlflow.start_run(): 
+        model_info = mlflow.pyfunc.log_model(
+            artifact_path=pipeline_name, 
+            python_model=wrapped_model, 
+            input_example=input_example, 
+            signature=signature, 
+            conda_env=conda_env, 
+            code_paths=code_paths,
+            registered_model_name=registered_model_name 
+        )
+
+        if hasattr(pipeline, "prompt_template_text"):
+            mlflow.log_text(
+                pipeline.prompt_template_text,
+                "prompt_template.jinja2"
             )
+        
+        if hasattr(pipeline, "_template_vars"):
+            mlflow.log_param("template_vars", pipeline._template_vars)
+        
+        if hasattr(pipeline, "_top_k"):
+            mlflow.log_param("top_k", pipeline._top_k)
+        
+        if hasattr(pipeline, "_embedding_model"):
+            mlflow.log_param(
+                "embedding_model",
+                pipeline._embedding_model.__class__.__name__
+            )
+
+        return model_info 
