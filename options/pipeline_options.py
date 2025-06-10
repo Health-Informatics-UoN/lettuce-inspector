@@ -25,6 +25,8 @@ class LLMModel(str, Enum):
     MED_LLAMA_3_8B_V2 = "med-llama-3-8b-v2"
     MED_LLAMA_3_8B_V3 = "med-llama-3-8b-v3"
     MED_LLAMA_3_8B_V4 = "med-llama-3-8b-v4"
+    PHI_4_IQ4_XS = "phi-4_IQ4_XS"
+    QWEN2_5_14B_INSTRUCT = "qwen2.5-14b-instruct"
 
     def get_eot_token(self) -> str:
         if self.value in [

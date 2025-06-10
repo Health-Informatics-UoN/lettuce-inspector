@@ -71,4 +71,12 @@ local_models = {
         "repo_id": "bartowski/JSL-MedLlama-3-8B-v1.0-GGUF",
         "filename": "JSL-MedLlama-3-8B-v1.0-IQ3_M.gguf",
     },
+    "phi-4_IQ4_XS": {
+        "repo_id": "bartowski/phi-4-GGUF",
+        "filename": "phi-4-IQ4_XS.gguf"
+    },
+    "qwen2.5-14b-instruct": {
+        "repo_id": "bartowski/Qwen2.5-14B-Instruct-GGUF",
+        "filename": "Qwen2.5-14B-Instruct-Q4_K_S.gguf"
+    },
 }
