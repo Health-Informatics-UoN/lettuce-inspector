@@ -19,8 +19,16 @@ class MLflowEvaluationRunner():
         mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(experiment_name)
 
-    def log_dataset(self): 
-        pass  
+    def log_dataset(self, eval_data: pd.DataFrame):
+        """
+        Log the dataset to the mlflow UI. 
+        """
+        pd_dataset = mlflow.data.from_pandas(
+            eval_data, predictions="predictions", targets="targets"
+        )
+        mlflow.log_input(pd_dataset, context="evaluation")
+        return pd_dataset 
+
 
     def run_evaluation(
         self, 
