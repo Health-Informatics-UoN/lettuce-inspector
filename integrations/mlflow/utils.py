@@ -66,4 +66,5 @@ def generate_conda_env_from_pyproject(model_only: bool = True) -> dict:
     }
 
 if __name__ == "__main__": 
-    generate_pip_requirements()
+    requirements = generate_pip_requirements()
+    breakpoint()

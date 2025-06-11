@@ -16,11 +16,8 @@ class MLflowEvaluationRunner():
     ):
         self.experiment_name = experiment_name
         self.tracking_uri = tracking_uri 
-        mlflow.set_tracking_uri(tracking_uri)
-        mlflow.set_experiment(experiment_name)
 
-    @staticmethod
-    def log_dataset(eval_data: pd.DataFrame):
+    def _log_dataset(self, eval_data: pd.DataFrame):
         """
         Log the dataset to the mlflow UI. 
         """
@@ -30,14 +27,12 @@ class MLflowEvaluationRunner():
         mlflow.log_input(pd_dataset, context="evaluation")
         return pd_dataset 
 
-    @staticmethod
-    def log_pipeline(
+    def _log_pipeline(
+        self, 
         pipeline: SingleResultPipeline, 
         pipeline_name: str, 
         pipeline_type: str, 
-        input_example: Optional[pd.DataFrame] = None, 
-        signature: Optional[mlflow.models.ModelSignature] = None,
-        pip_requirements: Optional[dict] = None,
+        input_example: Optional[pd.DataFrame], 
         code_paths: Optional[List[str]] = None, 
         registered_model_name: Optional[str] = None    
     ) -> mlflow.models.model.ModelInfo: 
@@ -45,13 +40,11 @@ class MLflowEvaluationRunner():
         Log a lettuce pipeline as a MLflow model. 
         """
         wrapped_model = MLflowPipelineWrapper(pipeline, pipeline_type)
+  
+        output_example = wrapped_model.predict(input_example)
+        signature = mlflow.models.infer_signature(input_example, output_example)
 
-        if signature is None and input_example is not None: 
-            output_example = wrapped_model.predict(input_example)
-            signature = mlflow.models.infer_signature(input_example, output_example)
-
-        if pip_requirements is None:
-            pip_requirements = generate_pip_requirements()
+        pip_requirements = generate_pip_requirements()
 
         model_info = mlflow.pyfunc.log_model(
             artifact_path=pipeline_name, 
@@ -90,19 +83,22 @@ class MLflowEvaluationRunner():
         pipeline_type: str, 
         eval_df: pd.DataFrame, 
         metrics: List[MetricValue]
-    ): 
+    ):  
+        mlflow.set_tracking_uri(self.tracking_uri)
+        mlflow.set_experiment(self.experiment_name)
+
         with mlflow.start_run() as run: 
-            pd_dataset = MLflowEvaluationRunner.log_dataset(eval_df)
+            _ = self._log_dataset(eval_df)
            
-            model_info = MLflowEvaluationRunner.log_pipeline(
+            model_info = self._log_pipeline(
                 pipeline, 
                 pipeline_name=pipeline_name, 
                 pipeline_type=pipeline_type, 
                 input_example=eval_df.iloc[0]
             )
             
-            result = mlflow.evaluate(
-                model=model_info.uri(),         
+            _ = mlflow.evaluate(
+                model=model_info.model_uri,         
                 data=eval_df,                 
                 targets="targets",               
                 extra_metrics=metrics, 
@@ -113,3 +109,14 @@ class MLflowEvaluationRunner():
                     }
                 }
             )
+    
+
+    def evaluate_against_baseline(
+        self, 
+        baseline_model_run_id = None,  
+        static_result = None     
+    ): 
+        """
+        See Mlflow docs - Model Evaluation section.
+        """
+        pass 
