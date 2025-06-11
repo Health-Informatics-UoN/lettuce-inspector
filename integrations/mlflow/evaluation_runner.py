@@ -25,42 +25,10 @@ class MLflowEvaluationRunner():
         Log the dataset to the mlflow UI. 
         """
         pd_dataset = mlflow.data.from_pandas(
-            eval_data, predictions="predictions", targets="targets"
+            eval_data, targets="targets"
         )
         mlflow.log_input(pd_dataset, context="evaluation")
         return pd_dataset 
-
-
-    def run_evaluation(
-        self, 
-        pipeline: SingleResultPipeline, 
-        pipeline_name: str, 
-        pipeline_type: str, 
-        eval_df: pd.DataFrame, 
-        metrics: List[MetricValue]
-    ): 
-        with mlflow.start_run() as run: 
-            pd_dataset = MLflowEvaluationRunner.log_dataset(eval_df)
-           
-            model_info = MLflowEvaluationRunner.log_pipeline(
-                pipeline, 
-                pipeline_name=pipeline_name, 
-                pipeline_type=pipeline_type, 
-                input_example=eval_df.iloc[0]
-            )
-            
-            result = mlflow.evaluate(
-                model=model_info.uri(),         
-                data=eval_df,                 
-                targets="targets",               
-                extra_metrics=metrics, 
-                evaluator_config={
-                    "col_mapping": {
-                        "predictions": "predictions", 
-                        "targets": "targets"          
-                    }
-                }
-            )
 
     @staticmethod
     def log_pipeline(
@@ -114,3 +82,34 @@ class MLflowEvaluationRunner():
             )
 
         return model_info 
+    
+    def run_evaluation(
+        self, 
+        pipeline: SingleResultPipeline, 
+        pipeline_name: str, 
+        pipeline_type: str, 
+        eval_df: pd.DataFrame, 
+        metrics: List[MetricValue]
+    ): 
+        with mlflow.start_run() as run: 
+            pd_dataset = MLflowEvaluationRunner.log_dataset(eval_df)
+           
+            model_info = MLflowEvaluationRunner.log_pipeline(
+                pipeline, 
+                pipeline_name=pipeline_name, 
+                pipeline_type=pipeline_type, 
+                input_example=eval_df.iloc[0]
+            )
+            
+            result = mlflow.evaluate(
+                model=model_info.uri(),         
+                data=eval_df,                 
+                targets="targets",               
+                extra_metrics=metrics, 
+                evaluator_config={
+                    "col_mapping": {
+                        "predictions": "predictions", 
+                        "targets": "targets"          
+                    }
+                }
+            )
