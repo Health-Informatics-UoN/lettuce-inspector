@@ -46,8 +46,7 @@ def prompt_template_str():
 
     Task:
 
-    Informal name: {{informal_name}}<|eot_id|>
-    Response: """    
+    Informal name: {{informal_name}}"""
 
 
 def test_exact_match_metric_success(): 
@@ -115,4 +114,3 @@ def test_exact_match_metric_with_mlflow_evaluate(
     assert "exact_match_eval_fn/mean" in result.metrics
     assert "exact_match_eval_fn/variance" in result.metrics
     assert "exact_match_eval_fn/median" in result.metrics
-    

@@ -19,7 +19,8 @@ class MLflowEvaluationRunner():
         mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(experiment_name)
 
-    def log_dataset(self, eval_data: pd.DataFrame):
+    @staticmethod
+    def log_dataset(eval_data: pd.DataFrame):
         """
         Log the dataset to the mlflow UI. 
         """
@@ -33,24 +34,33 @@ class MLflowEvaluationRunner():
     def run_evaluation(
         self, 
         pipeline: SingleResultPipeline, 
+        pipeline_name: str, 
         pipeline_type: str, 
         eval_df: pd.DataFrame, 
         metrics: List[MetricValue]
     ): 
-        pass 
-        # with mlflow.start_run() as run: 
-            #result = mlflow.evaluate(
-            #    model=str(model_path),         
-            #    data=eval_df,                 
-            #    targets="targets",               
-            #    extra_metrics=metrics, 
-            #    evaluator_config={
-            #        "col_mapping": {
-            #            "predictions": "predictions", 
-            #            "targets": "targets"          
-            #        }
-            #    }
-            #)
+        with mlflow.start_run() as run: 
+            pd_dataset = MLflowEvaluationRunner.log_dataset(eval_df)
+           
+            model_info = MLflowEvaluationRunner.log_pipeline(
+                pipeline, 
+                pipeline_name=pipeline_name, 
+                pipeline_type=pipeline_type, 
+                input_example=eval_df.iloc[0]
+            )
+            
+            result = mlflow.evaluate(
+                model=model_info.uri(),         
+                data=eval_df,                 
+                targets="targets",               
+                extra_metrics=metrics, 
+                evaluator_config={
+                    "col_mapping": {
+                        "predictions": "predictions", 
+                        "targets": "targets"          
+                    }
+                }
+            )
 
     @staticmethod
     def log_pipeline(
@@ -69,18 +79,18 @@ class MLflowEvaluationRunner():
         wrapped_model = MLflowPipelineWrapper(pipeline, pipeline_type)
 
         if signature is None and input_example is not None: 
-            output_example = wrapped_model.predict(None, input_example)
+            output_example = wrapped_model.predict(input_example)
             signature = mlflow.models.infer_signature(input_example, output_example)
 
         if pip_requirements is None:
-            conda_env = generate_pip_requirements()
+            pip_requirements = generate_pip_requirements()
 
         model_info = mlflow.pyfunc.log_model(
             artifact_path=pipeline_name, 
             python_model=wrapped_model, 
             input_example=input_example, 
             signature=signature, 
-            conda_env=conda_env, 
+            pip_requirements=pip_requirements, 
             code_paths=code_paths,
             registered_model_name=registered_model_name 
         )
