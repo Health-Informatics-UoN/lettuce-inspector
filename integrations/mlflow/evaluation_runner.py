@@ -90,11 +90,12 @@ class MLflowEvaluationRunner():
         with mlflow.start_run() as run: 
             _ = self._log_dataset(eval_df)
            
+            input_example = eval_df[["input_data"]].head(5) if eval_df.shape[0] >= 5 else eval_df[["input_data"]] 
             model_info = self._log_pipeline(
                 pipeline, 
                 pipeline_name=pipeline_name, 
                 pipeline_type=pipeline_type, 
-                input_example=eval_df.iloc[0]
+                input_example=input_example
             )
             
             _ = mlflow.evaluate(
@@ -104,12 +105,15 @@ class MLflowEvaluationRunner():
                 extra_metrics=metrics, 
                 evaluator_config={
                     "col_mapping": {
+                        "inputs": "input_data",
                         "predictions": "predictions", 
                         "targets": "targets"          
                     }
                 }
             )
-    
+
+        return run 
+        
 
     def evaluate_against_baseline(
         self, 
@@ -117,6 +121,8 @@ class MLflowEvaluationRunner():
         static_result = None     
     ): 
         """
-        See Mlflow docs - Model Evaluation section.
+        See MLflow docs - Model Evaluation section.
+
+        Used to compare a candidate pipeline model against a baseline pipeline. 
         """
         pass 
