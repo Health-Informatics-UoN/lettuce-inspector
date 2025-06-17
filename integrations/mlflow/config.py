@@ -79,10 +79,20 @@ class DatabaseConfig:
 @dataclass
 class RetrievalConfig:
     """Configuration for retrieval parameters"""
+    vocab_ids: List[str] | None = None 
     top_k: int = 5
     similarity_threshold: float = 0.7
+    standard_concept: bool = False 
     max_distance: float = 1.0
     rerank: bool = False
+
+
+class LLMPipelineConfig: 
+    """Complete LLM pipeline configuration"""
+    llm: LLMConfig
+    prompt_template: str
+    template_vars: List[str]
+    description: str = ""
 
 
 @dataclass

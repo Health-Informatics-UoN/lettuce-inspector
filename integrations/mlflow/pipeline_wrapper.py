@@ -11,84 +11,20 @@ from omop.omop_queries import query_vector
 from integrations.mlflow.config import RAGPipelineConfig 
 
 
-class MLflowPipelineWrapper(mlflow.pyfunc.PythonModel):
-    """
-    Wrapper to make lettuce pipelines compatible with MLflow's model interface. 
-    """
-
-    def __init__(self, pipeline, pipeline_type):
-        super().__init__()
-        self.pipeline = pipeline 
-        self.pipeline_type = pipeline_type 
-
-    def predict(self, model_input: pd.DataFrame, params=None):
-        """
-        Predict method expected by MLflow. 
-
-        Args:
-            model_input: DataFrame with input data 
-
-        Returns:
-            DataFrame with predictions 
-        """
-        predictions = []
-
-        if "input_data" not in model_input.columns: 
-            raise ValueError("The column input_data must be present")
-        
-        for _, row in model_input.iterrows(): 
-            input_data = row["input_data"]
-            if isinstance(input_data, str): 
-                input_data = [input_data]
-            else: 
-                raise TypeError("Search terms in input_data must be strings!")
-            prediction = self.pipeline.run(input_data)
-            predictions.append(prediction)
-
-        return pd.DataFrame({"predictions": predictions})
-
-
 class MLflowBasePipeline(mlflow.pyfunc.PythonModel): 
     """Base class for mlflow pipelines"""
 
-    def __init__(self, config: Optional[Config]): 
-        pass 
-
-    @abstractmethod 
-    def _initialise_from_config(self): 
-        pass 
-
-
-
-
-class MLflowRAGPipeline(mlflow.pyfunc.PythonModel): 
-    """RAG Pipeline that loads configuration from YAML"""
-    
-    def __init__(self, config: Optional[RAGPipelineConfig] = None):
-        self.config: Optional[RAGPipelineConfig] = config 
+    def __init__(self, config): 
+        self.config = config 
         self.llm = None
         self.embedding_model = None
         self.session = None
         self._initialised = False 
 
+    @abstractmethod 
     def _initialise_from_config(self): 
-        """Initialize all components from YAML configuration"""   
-        if self._initialised:
-            return
-    
-        from jinja2 import Environment
-        
-        print("Initializing RAG pipeline from YAML configuration...")
+        pass 
 
-        self.jinja_env = jinja_env = Environment()
-        self.prompt_template = jinja_env.from_string(self.config.prompt_template)
-        self._build_llm()
-        self._build_embedding_model()
-        self._build_database_connection()
-        
-        self._initialised = True
-        print("RAG pipeline initialization complete!")
-    
     def _build_llm(self): 
         from huggingface_hub import hf_hub_download
         from llama_cpp import Llama
@@ -149,13 +85,61 @@ class MLflowRAGPipeline(mlflow.pyfunc.PythonModel):
 
         return pd.DataFrame({"predictions": predictions})
 
+    @abstractmethod 
+    def _process_single_input(self, search_term: str): 
+        pass 
+    
+
+class MLflowLLMPipeline(MLflowBasePipeline): 
+    """LLM pipeline that loads configuration from YAML"""
+
+    def _initialise_from_config(self): 
+        """Initialize all components from YAML configuration"""   
+        if self._initialised:
+            return
+    
+        from jinja2 import Environment
+
+        self.jinja_env = jinja_env = Environment()
+        self.prompt_template = jinja_env.from_string(self.config.prompt_template)
+        self._build_llm()
+        
+        self._initialised = True
+        print("LLM pipeline initialization complete!")
+
+    def _process_single_input(self, search_term: str):
+        prompt = self.prompt_template.render({self.config.template_vars[0]: search_term})
+        reply = self.llm.create_completion(prompt=prompt)["choices"][0]["text"]
+        return reply
+
+class MLflowRAGPipeline(MLflowBasePipeline): 
+    """RAG Pipeline that loads configuration from YAML"""
+    
+    def __init__(self, config: Optional[RAGPipelineConfig] = None):
+        super().__init__(config)
+
+    def _initialise_from_config(self): 
+        """Initialize all components from YAML configuration"""   
+        if self._initialised:
+            return
+    
+        from jinja2 import Environment
+
+        self.jinja_env = jinja_env = Environment()
+        self.prompt_template = jinja_env.from_string(self.config.prompt_template)
+        self._build_llm()
+        self._build_embedding_model()
+        self._build_database_connection()
+        
+        self._initialised = True
+        print("RAG pipeline initialization complete!")
 
     def _process_single_input(self, search_term: str): 
         embedding = self.embedding_model.encode(search_term)
         search_query = query_vector(
             embedding,
-            embed_vocab=["RxNorm"], 
-            standard_concept=True, 
+            embed_vocab=self.config.retrieval.vocab_ids, 
+            standard_concept=self.config.retrieval.standard_concept, 
             n=self.config.retrieval.top_k
         )
         retrieved_vecs = self.session.execute(search_query).mappings().all()

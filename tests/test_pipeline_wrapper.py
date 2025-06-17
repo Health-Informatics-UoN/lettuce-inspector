@@ -117,7 +117,7 @@ def test_predict_rag_pipeline_wrapper(prompt_template_str_rag):
         llm=LLMConfig(model_name=LLMModel.LLAMA_3_1_8B.value),
         embedding=EmbeddingConfig(model_name=get_embedding_model("BGESMALL").info.path),
         database=DatabaseConfig.from_env(),
-        retrieval=RetrievalConfig(), 
+        retrieval=RetrievalConfig(vocab_ids=["RxNorm"], standard_concept=True), 
         prompt_template=prompt_template_str_rag, 
         template_vars = ["informal_name", "vec_results"]
     ) 
