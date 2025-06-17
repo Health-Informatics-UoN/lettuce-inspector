@@ -4,24 +4,35 @@ import mlflow
 from llama_cpp import Llama
 from huggingface_hub import hf_hub_download
 
-from integrations.mlflow.pipeline_wrapper import MLflowPipelineWrapper
+from integrations.mlflow.pipeline_wrapper import MLflowPipelineWrapper, MLflowRAGPipeline
+from integrations.mlflow.config import (
+    LLMConfig, 
+    EmbeddingConfig, 
+    RetrievalConfig, 
+    DatabaseConfig, 
+    RAGPipelineConfig
+)
 from evaluation.pipelines import LLMPipeline
 from components.models import local_models, LLMModel 
+from components.embeddings import get_embedding_model 
 
 
 @pytest.fixture(scope="session") 
 def llama_model(
-    model_name: str = LLMModel.LLAMA_3_1_8B.value, 
+    model_name: str = LLMModel.TINYLLAMA_1_1B_CHAT.value, 
     n_ctx: int = 512, 
     n_batch: int = 32, 
     max_tokens: int = 128
 ): 
     return Llama(
         hf_hub_download(**local_models[model_name]),
-        n_ctx=n_ctx,
-        n_batch=n_batch,
-        model_kwargs={"n_gpu_layers": -1},
-        generation_kwargs={"max_tokens": max_tokens, "temperature": 0}
+        model_kwargs={
+            "n_ctx": n_ctx,
+            "n_batch": n_batch,
+            "n_gpu_layers": -1,
+            "verbose": True
+        },
+        generation_kwargs={"max_tokens": max_tokens, "temperature": 0.}
     )
 
 
@@ -46,7 +57,38 @@ def prompt_template_str():
     Task:
 
     Informal name: {{informal_name}}<|eot_id|>
-    Response: """    
+    Response: """   
+
+
+@pytest.fixture(scope="session")
+def prompt_template_str_rag(): 
+    return """You are an assistant that suggests formal RxNorm names for a medication. You will be given the name of a medication, along with some possibly related RxNorm terms. If you do not think these terms are related, ignore them when making your suggestion.
+
+    Respond only with the formal name of the medication, without any extra explanation.
+
+    Examples:
+
+    Informal name: Tylenol
+    Response: Acetaminophen
+
+    Informal name: Advil
+    Response: Ibuprofen
+
+    Informal name: Motrin
+    Response: Ibuprofen
+
+    Informal name: Aleve
+    Response: Naproxen
+
+    Possible related terms:
+    {% for result in vec_results %}
+        {{result.content}}
+    {% endfor %}
+
+    Task:
+
+    Informal name: {{informal_name}}
+    Response: """
 
 
 def test_predict_llm_pipeline_wrapper(llama_model, prompt_template_str):     
@@ -65,8 +107,22 @@ def test_predict_llm_pipeline_wrapper(llama_model, prompt_template_str):
     assert predictions["predictions"].iloc[1].strip().lower() == "codeine"
 
 
-def test_predict_rag_pipeline_wrapper(): 
-    pass 
+def test_predict_rag_pipeline_wrapper(prompt_template_str_rag): 
+    model_input = pd.DataFrame({
+        "input_data": ["paracetamol", "codeine"], 
+        "expected_output": ["acetaminophen", "codeine"]
+    })
+    config = RAGPipelineConfig(
+        llm=LLMConfig(model_name=LLMModel.TINYLLAMA_1_1B_CHAT.value),
+        embedding=EmbeddingConfig(model_name=get_embedding_model("BGESMALL").info.path),
+        database=DatabaseConfig.from_env(),
+        retrieval=RetrievalConfig(), 
+        prompt_template=prompt_template_str_rag, 
+        template_vars = ["informal_name", "vec_results"]
+    ) 
+    pipeline = MLflowRAGPipeline(config=config)
+    result = pipeline.predict(model_input)
+    breakpoint()
 
 
 def test_error_thrown_if_input_data_not_present(): 

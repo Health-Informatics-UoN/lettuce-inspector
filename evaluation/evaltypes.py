@@ -5,8 +5,6 @@ import json
 import os
 from jinja2 import Environment 
 
-from evaluation.mlflow_evaluation import EvaluationMLflowLogger
-
 
 jinja_env = Environment()
 
@@ -191,9 +189,7 @@ class EvaluationFramework:
         pipeline_tests: List[PipelineTest],
         dataset: EvalDataLoader,
         description: str,
-        results_path: str = "results.json",
-        use_mlflow: bool = True, 
-        experiment_name: str = "lettuce-evalution"
+        results_path: str = "results.json"
     ):
         """
         Initialises the EvaluationFramework
@@ -217,9 +213,6 @@ class EvaluationFramework:
         self._results_path = results_path
         self.input_data = dataset.input_data
         self.expected_output = dataset.expected_output
-        self.use_mlflow = use_mlflow
-        if self.use_mlflow:
-            self.mlflow_logger = EvaluationMLflowLogger(experiment_name=experiment_name)
 
     def run_evaluations(self):
         """
@@ -243,9 +236,6 @@ class EvaluationFramework:
             )
 
         self._save_evaluations()
-
-        if self.use_mlflow:
-            self.mlflow_logger.log_evaluation_run(self)
 
     def _save_evaluations(self):
         """
