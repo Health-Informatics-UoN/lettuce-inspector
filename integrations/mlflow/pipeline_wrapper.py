@@ -80,14 +80,11 @@ class MLflowRAGPipeline(mlflow.pyfunc.PythonModel):
         from llama_cpp import Llama
         
         self.llm = Llama(
-            model_path=hf_hub_download(**local_models[self.config.llm.model_name]), 
-            model_kwargs={
-                "n_ctx": self.config.llm.context_length,
-                "n_batch": self.config.llm.batch_size,
-                "n_gpu_layers": -1,
-                "verbose": True
-            },
-            generation_kwargs={"max_tokens": self.config.llm.max_tokens, "temperature": self.config.llm.temperature}
+            model_path=hf_hub_download(**local_models[self.config.llm.model_name]),
+            n_ctx=self.config.llm.context_length,
+            n_batch=self.config.llm.batch_size,
+            n_gpu_layers=-1,
+            verbose=True
         )
 
     def _build_embedding_model(self): 
@@ -141,7 +138,12 @@ class MLflowRAGPipeline(mlflow.pyfunc.PythonModel):
 
     def _process_single_input(self, search_term: str): 
         embedding = self.embedding_model.encode(search_term)
-        search_query = query_vector(embedding, self.config.retrieval.top_k)
+        search_query = query_vector(
+            embedding,
+            embed_vocab=["RxNorm"], 
+            standard_concept=True, 
+            n=self.config.retrieval.top_k
+        )
         retrieved_vecs = self.session.execute(search_query).mappings().all()
 
         template_context = {

@@ -11,7 +11,7 @@ class LLMConfig:
     model_path: Optional[str] = None
     model_name: Optional[str] = None
     context_length: int = 2048
-    batch_size: int = 32
+    batch_size: int = 512
     temperature: float = 0.0
     max_tokens: int = 256
     threads: int = 4

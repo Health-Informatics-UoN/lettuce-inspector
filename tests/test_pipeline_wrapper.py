@@ -61,35 +61,36 @@ def prompt_template_str():
 
 
 @pytest.fixture(scope="session")
-def prompt_template_str_rag(): 
-    return """You are an assistant that suggests formal RxNorm names for a medication. You will be given the name of a medication, along with some possibly related RxNorm terms. If you do not think these terms are related, ignore them when making your suggestion.
+def prompt_template_str_rag():
+    return """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
-    Respond only with the formal name of the medication, without any extra explanation.
+You are an assistant that suggests formal RxNorm names for a medication. You will be given the name of a medication, along with some possibly related RxNorm terms. If you do not think these terms are related, ignore them when making your suggestion.
 
-    Examples:
+Respond only with the formal name of the medication, without any extra explanation.
 
-    Informal name: Tylenol
-    Response: Acetaminophen
+Examples:
 
-    Informal name: Advil
-    Response: Ibuprofen
+Informal name: Tylenol
+Response: Acetaminophen
 
-    Informal name: Motrin
-    Response: Ibuprofen
+Informal name: Advil
+Response: Ibuprofen
 
-    Informal name: Aleve
-    Response: Naproxen
+Informal name: Motrin
+Response: Ibuprofen
 
-    Possible related terms:
-    {% for result in vec_results %}
-        {{result.content}}
-    {% endfor %}
+Informal name: Aleve
+Response: Naproxen<|eot_id|><|start_header_id|>user<|end_header_id|>
 
-    Task:
+Possible related terms:
+{% for result in vec_results %}
+{{result.content}}
+{% endfor %}
 
-    Informal name: {{informal_name}}
-    Response: """
+Task:
+Informal name: {{informal_name}}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
+"""
 
 def test_predict_llm_pipeline_wrapper(llama_model, prompt_template_str):     
     pipeline = LLMPipeline(
@@ -113,7 +114,7 @@ def test_predict_rag_pipeline_wrapper(prompt_template_str_rag):
         "expected_output": ["acetaminophen", "codeine"]
     })
     config = RAGPipelineConfig(
-        llm=LLMConfig(model_name=LLMModel.TINYLLAMA_1_1B_CHAT.value),
+        llm=LLMConfig(model_name=LLMModel.LLAMA_3_1_8B.value),
         embedding=EmbeddingConfig(model_name=get_embedding_model("BGESMALL").info.path),
         database=DatabaseConfig.from_env(),
         retrieval=RetrievalConfig(), 
