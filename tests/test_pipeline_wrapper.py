@@ -122,8 +122,9 @@ def test_predict_rag_pipeline_wrapper(prompt_template_str_rag):
         template_vars = ["informal_name", "vec_results"]
     ) 
     pipeline = MLflowRAGPipeline(config=config)
-    result = pipeline.predict(model_input)
-    breakpoint()
+    predictions = pipeline.predict(model_input)
+    assert predictions["predictions"].iloc[0].strip().lower() == "acetaminophen"
+    assert predictions["predictions"].iloc[1].strip().lower() == "codeine"
 
 
 def test_error_thrown_if_input_data_not_present(): 

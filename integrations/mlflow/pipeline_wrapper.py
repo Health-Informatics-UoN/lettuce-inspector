@@ -2,6 +2,7 @@
 Wrapper around mlflow's PythonModel 
 """
 from typing import Optional
+from abc import abstractmethod
 import pandas as pd 
 import mlflow
 
@@ -45,6 +46,19 @@ class MLflowPipelineWrapper(mlflow.pyfunc.PythonModel):
             predictions.append(prediction)
 
         return pd.DataFrame({"predictions": predictions})
+
+
+class MLflowBasePipeline(mlflow.pyfunc.PythonModel): 
+    """Base class for mlflow pipelines"""
+
+    def __init__(self, config: Optional[Config]): 
+        pass 
+
+    @abstractmethod 
+    def _initialise_from_config(self): 
+        pass 
+
+
 
 
 class MLflowRAGPipeline(mlflow.pyfunc.PythonModel): 
