@@ -3,8 +3,8 @@ import pandas as pd
 import mlflow 
 from mlflow.metrics import MetricValue
 
-from evaluation.evaltypes import SingleResultPipeline
-from integrations.mlflow.pipeline_wrapper import MLflowPipelineWrapper 
+from integrations.mlflow.config import LLMPipelineConfig, EmbeddingPipelineConfig, RAGPipelineConfig 
+from integrations.mlflow.pipeline_wrapper import MLflowBasePipeline, MLflowLLMPipeline, MLflowEmbeddingPipeline, MLflowRAGPipeline
 from integrations.mlflow.utils import generate_pip_requirements
 
 
@@ -27,9 +27,55 @@ class MLflowEvaluationRunner():
         mlflow.log_input(pd_dataset, context="evaluation")
         return pd_dataset 
 
+    def _validate_and_prepare_config(
+        self, 
+        pipeline, 
+        pipeline_type, 
+        pipeline_config, 
+        pipeline_yaml
+    ): 
+        provided_inputs = sum([
+            pipeline is not None,
+            pipeline_config is not None,
+            pipeline_yaml is not None
+        ])
+        
+        if provided_inputs != 1:
+            raise ValueError(
+                "Provide exactly one of: pipeline, pipeline_config, or pipeline_yaml"
+            )
+        
+        if pipeline_yaml:
+            config_map = {
+                "llm": LLMPipelineConfig,
+                "embedding": EmbeddingPipelineConfig,
+                "rag": RAGPipelineConfig
+            }
+            config_class = config_map.get(pipeline_type)
+            if not config_class:
+                raise ValueError(f"Unknown pipeline type: {pipeline_type}")
+            
+            pipeline_config = config_class.from_yaml(pipeline_yaml)
+        
+        return pipeline_config 
+    
+    def _instantiate_pipeline_from_config(self, config, pipeline_type): 
+        pipeline_map = {
+            "llm": MLflowLLMPipeline,
+            "embedding": MLflowEmbeddingPipeline,
+            "rag": MLflowRAGPipeline
+        }
+        
+        pipeline_class = pipeline_map.get(pipeline_type)
+        if not pipeline_class:
+            raise ValueError(f"Unknown pipeline type: {pipeline_type}")
+            
+        return pipeline_class(config)
+
+    
     def _log_pipeline(
         self, 
-        pipeline: SingleResultPipeline, 
+        pipeline: MLflowBasePipeline, 
         pipeline_name: str, 
         pipeline_type: str, 
         input_example: Optional[pd.DataFrame], 
@@ -39,16 +85,14 @@ class MLflowEvaluationRunner():
         """
         Log a lettuce pipeline as a MLflow model. 
         """
-        wrapped_model = MLflowPipelineWrapper(pipeline, pipeline_type)
-  
-        output_example = wrapped_model.predict(input_example)
+        output_example = pipeline.predict(input_example)
         signature = mlflow.models.infer_signature(input_example, output_example)
 
         pip_requirements = generate_pip_requirements()
 
         model_info = mlflow.pyfunc.log_model(
             artifact_path=pipeline_name, 
-            python_model=wrapped_model, 
+            python_model=pipeline, 
             input_example=input_example, 
             signature=signature, 
             pip_requirements=pip_requirements, 
@@ -78,12 +122,22 @@ class MLflowEvaluationRunner():
     
     def run_evaluation(
         self, 
-        pipeline: SingleResultPipeline, 
-        pipeline_name: str, 
+        pipeline: MLflowBasePipeline, 
         pipeline_type: str, 
         eval_df: pd.DataFrame, 
         metrics: List[MetricValue]
-    ):  
+    ):
+        """
+        Run evaluation on a pipeline.
+        
+        Provide ONE of:
+        - pipeline: 
+            Already instantiated pipeline object      
+        - pipeline_config: 
+            Configuration object
+        - pipeline_yaml: 
+            Path to YAML configuration file
+        """
         mlflow.set_tracking_uri(self.tracking_uri)
         mlflow.set_experiment(self.experiment_name)
 

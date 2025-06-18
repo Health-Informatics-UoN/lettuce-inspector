@@ -1,14 +1,17 @@
 """
 Wrapper around mlflow's PythonModel 
 """
-from typing import Optional
+from typing import Optional, List
 from abc import abstractmethod
 import pandas as pd 
 import mlflow
 
-from components.models import local_models
 from omop.omop_queries import query_vector
-from integrations.mlflow.config import RAGPipelineConfig 
+from integrations.mlflow.config import (
+    LLMPipelineConfig, 
+    EmbeddingPipelineConfig, 
+    RAGPipelineConfig 
+)
 
 
 class ComponentBuilder: 
@@ -31,8 +34,7 @@ class ComponentBuilder:
             n_ctx=llm_config.context_length,
             n_batch=llm_config.batch_size,
             n_gpu_layers=-1,
-            verbose=True,
-            temperature=llm_config.temperature
+            verbose=True
         )
     
     @staticmethod
@@ -84,49 +86,9 @@ class MLflowBasePipeline(mlflow.pyfunc.PythonModel):
     def _initialise_from_config(self): 
         pass 
 
-    def _build_llm(self): 
-        from huggingface_hub import hf_hub_download
-        from llama_cpp import Llama
-        
-        self.llm = Llama(
-            model_path=hf_hub_download(**local_models[self.config.llm.model_name]),
-            n_ctx=self.config.llm.context_length,
-            n_batch=self.config.llm.batch_size,
-            n_gpu_layers=-1,
-            verbose=True
-        )
-
-    def _build_embedding_model(self): 
-        """Build embedding model from YAML config"""
-        from sentence_transformers import SentenceTransformer
-        
-        emb_config = self.config.embedding
-        self.embedding_model = SentenceTransformer(
-            emb_config.model_name,
-            device=emb_config.device
-        )
-
-    def _build_database_connection(self): 
-        """Build database connection from YAML config"""
-        from sqlalchemy import create_engine
-        from sqlalchemy.orm import sessionmaker
-        from sqlalchemy.sql import text 
-        
-        db_config = self.config.database
-        connection_string = db_config.get_connection_string()
-        
-        self.db_engine = create_engine(
-            connection_string,
-            pool_size=db_config.pool_size,
-            pool_recycle=db_config.pool_recycle,
-            echo=db_config.echo_sql
-        )
-        
-        SessionLocal = sessionmaker(bind=self.db_engine)
-        self.session = SessionLocal()
-        
-        # Test connection
-        self.session.execute(text("SELECT 1")) 
+    @abstractmethod 
+    def _process_single_input(self, search_term: str): 
+        pass 
 
     def predict(self, model_input: pd.DataFrame, params=None): 
         if "input_data" not in model_input.columns: 
@@ -144,13 +106,13 @@ class MLflowBasePipeline(mlflow.pyfunc.PythonModel):
 
         return pd.DataFrame({"predictions": predictions})
 
-    @abstractmethod 
-    def _process_single_input(self, search_term: str): 
-        pass 
-    
-
+      
 class MLflowLLMPipeline(MLflowBasePipeline): 
-    """LLM pipeline that loads configuration from YAML"""
+    """LLM-only pipeline for MLflow"""
+
+    def __init__(self, config: LLMPipelineConfig):
+        super().__init__(config)
+
 
     def _initialise_from_config(self): 
         """Initialize all components from YAML configuration"""   
@@ -159,17 +121,40 @@ class MLflowLLMPipeline(MLflowBasePipeline):
     
         from jinja2 import Environment
 
-        self.jinja_env = jinja_env = Environment()
-        self.prompt_template = jinja_env.from_string(self.config.prompt_template)
-        self._build_llm()
+        self.jinja_env = Environment()
+        self.prompt_template = self.jinja_env.from_string(self.config.prompt_template)
+        self.llm = ComponentBuilder.build_llm(self.config.llm)
         
         self._initialised = True
-        print("LLM pipeline initialization complete!")
 
     def _process_single_input(self, search_term: str):
         prompt = self.prompt_template.render({self.config.template_vars[0]: search_term})
-        reply = self.llm.create_completion(prompt=prompt)["choices"][0]["text"]
-        return reply
+        response = self.llm.create_completion(
+            prompt=prompt, 
+            max_tokens=self.config.llm.max_tokens, 
+            temperature=self.config.llm.temperature 
+        )
+        return response["choices"][0]["text"]
+
+
+class MLflowEmbeddingPipeline(MLflowBasePipeline):
+    """Embedding-only pipeline for MLflow"""
+    
+    def __init__(self, config: EmbeddingPipelineConfig):
+        super().__init__(config)
+
+    def _initialise_components(self):
+        """Initialize embedding model"""
+        self.embedding_model = ComponentBuilder.build_embedding_model(self.config.embedding)
+    
+    def _process_single_input(self, search_term: str) -> List[float]:
+        """Generate embedding for single input"""
+        embedding = self.embedding_model.encode(
+            search_term,
+            normalize_embeddings=self.config.embedding.normalize_embeddings
+        )
+        return embedding.tolist()
+
 
 class MLflowRAGPipeline(MLflowBasePipeline): 
     """RAG Pipeline that loads configuration from YAML"""
@@ -178,7 +163,7 @@ class MLflowRAGPipeline(MLflowBasePipeline):
         super().__init__(config)
 
     def _initialise_from_config(self): 
-        """Initialize all components from YAML configuration"""   
+        """Initialise all components from YAML configuration"""   
         if self._initialised:
             return
     
@@ -186,12 +171,15 @@ class MLflowRAGPipeline(MLflowBasePipeline):
 
         self.jinja_env = jinja_env = Environment()
         self.prompt_template = jinja_env.from_string(self.config.prompt_template)
-        self._build_llm()
-        self._build_embedding_model()
-        self._build_database_connection()
+
+        self.llm = ComponentBuilder.build_llm(self.config.llm)
+        self.embedding_model = ComponentBuilder.build_embedding_model(self.config.embedding)
+
+        session, engine = ComponentBuilder.build_database_session(self.config.database)
+        self.session = session 
+        self.engine = engine 
         
         self._initialised = True
-        print("RAG pipeline initialization complete!")
 
     def _process_single_input(self, search_term: str): 
         embedding = self.embedding_model.encode(search_term)
@@ -203,11 +191,17 @@ class MLflowRAGPipeline(MLflowBasePipeline):
         )
         retrieved_vecs = self.session.execute(search_query).mappings().all()
 
-        template_context = {
-            "informal_name": search_term,
-            "vec_results": retrieved_vecs
-        }
+        template_context = dict(zip(
+            self.config.template_vars,
+            [search_term, retrieved_vecs]
+        ))
+
         prompt = self.prompt_template.render(template_context)
         
-        reply = self.llm.create_completion(prompt=prompt)["choices"][0]["text"]
-        return reply
+        response = self.llm.create_completion(
+            prompt=prompt,
+            max_tokens=self.config.llm.max_tokens,
+            temperature=self.config.llm.temperature
+        )
+        
+        return response["choices"][0]["text"]
