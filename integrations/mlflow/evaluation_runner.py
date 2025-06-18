@@ -3,7 +3,7 @@ import pandas as pd
 import mlflow 
 from mlflow.metrics import MetricValue
 
-from integrations.mlflow.config import LLMPipelineConfig, EmbeddingPipelineConfig, RAGPipelineConfig 
+from integrations.mlflow.config import BasePipelineConfig, LLMPipelineConfig, EmbeddingPipelineConfig, RAGPipelineConfig 
 from integrations.mlflow.pipeline_wrapper import MLflowBasePipeline, MLflowLLMPipeline, MLflowEmbeddingPipeline, MLflowRAGPipeline
 from integrations.mlflow.utils import generate_pip_requirements
 
@@ -53,9 +53,12 @@ class MLflowEvaluationRunner():
             }
             config_class = config_map.get(pipeline_type)
             if not config_class:
-                raise ValueError(f"Unknown pipeline type: {pipeline_type}")
-            
+                raise ValueError(f"Unknown pipeline type: {pipeline_type}")  
+               
             pipeline_config = config_class.from_yaml(pipeline_yaml)
+
+        elif pipeline: 
+            pipeline_config = pipeline.config 
         
         return pipeline_config 
     
@@ -77,10 +80,8 @@ class MLflowEvaluationRunner():
         self, 
         pipeline: MLflowBasePipeline, 
         pipeline_name: str, 
-        pipeline_type: str, 
         input_example: Optional[pd.DataFrame], 
         code_paths: Optional[List[str]] = None, 
-        registered_model_name: Optional[str] = None    
     ) -> mlflow.models.model.ModelInfo: 
         """
         Log a lettuce pipeline as a MLflow model. 
@@ -97,7 +98,6 @@ class MLflowEvaluationRunner():
             signature=signature, 
             pip_requirements=pip_requirements, 
             code_paths=code_paths,
-            registered_model_name=registered_model_name 
         )
 
         if hasattr(pipeline, "prompt_template_text"):
@@ -122,10 +122,14 @@ class MLflowEvaluationRunner():
     
     def run_evaluation(
         self, 
-        pipeline: MLflowBasePipeline, 
-        pipeline_type: str, 
-        eval_df: pd.DataFrame, 
-        metrics: List[MetricValue]
+        pipeline: MLflowBasePipeline = None, 
+        pipeline_config: Optional[BasePipelineConfig] = None,
+        pipeline_yaml: Optional[str] = None,
+        pipeline_name: str = None,
+        pipeline_type: str = None,
+        eval_df: pd.DataFrame = None, 
+        metrics: List[MetricValue] = None, 
+        code_paths: Optional[List[str]] = None
     ):
         """
         Run evaluation on a pipeline.
@@ -141,15 +145,26 @@ class MLflowEvaluationRunner():
         mlflow.set_tracking_uri(self.tracking_uri)
         mlflow.set_experiment(self.experiment_name)
 
+        config = self._validate_and_prepare_config(
+            pipeline, 
+            pipeline_type, 
+            pipeline_config, 
+            pipeline_yaml 
+        )
+
+        pipeline = self._instantiate_pipeline_from_config(config, pipeline_type)
+
         with mlflow.start_run() as run: 
+            mlflow.log_dict(config.to_dict(), "pipeline_config.yaml")
+
             _ = self._log_dataset(eval_df)
            
             input_example = eval_df[["input_data"]].head(5) if eval_df.shape[0] >= 5 else eval_df[["input_data"]] 
             model_info = self._log_pipeline(
                 pipeline, 
                 pipeline_name=pipeline_name, 
-                pipeline_type=pipeline_type, 
-                input_example=input_example
+                input_example=input_example, 
+                code_paths=code_paths
             )
             
             _ = mlflow.evaluate(
