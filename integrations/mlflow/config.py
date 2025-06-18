@@ -1,5 +1,6 @@
 import yaml 
 import os 
+from abc import ABC, abstractmethod 
 from dataclasses import dataclass, asdict 
 from typing import Dict, Any, Optional, List 
 from pathlib import Path 
@@ -87,24 +88,9 @@ class RetrievalConfig:
     rerank: bool = False
 
 
-class LLMPipelineConfig: 
-    """Complete LLM pipeline configuration"""
-    llm: LLMConfig
-    prompt_template: str
-    template_vars: List[str]
-    description: str = ""
-
-
 @dataclass
-class RAGPipelineConfig:
-    """Complete RAG pipeline configuration"""
-    llm: LLMConfig
-    embedding: EmbeddingConfig
-    database: DatabaseConfig
-    retrieval: RetrievalConfig
-    prompt_template: str
-    template_vars: List[str]
-    description: str = ""
+class BasePipelineConfig(ABC):
+    """Base configuration for all pipeline types"""
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization"""
@@ -113,9 +99,66 @@ class RAGPipelineConfig:
     def to_yaml(self, filepath: str):
         """Save configuration to YAML file"""
         config_dict = self.to_dict()
-        
         with open(filepath, 'w') as f:
             yaml.dump(config_dict, f, default_flow_style=False, indent=2, sort_keys=False)
+    
+    @classmethod
+    @abstractmethod
+    def from_yaml(cls, filepath: str) -> 'BasePipelineConfig':
+        """Load configuration from YAML file"""
+        pass
+
+
+@dataclass
+class LLMPipelineConfig(BasePipelineConfig):  
+    """Complete LLM pipeline configuration"""
+    llm: LLMConfig
+    prompt_template: str
+    template_vars: List[str]
+    description: str = ""
+
+    @classmethod
+    def from_yaml(cls, filepath: str) -> 'LLMPipelineConfig':
+        """Load configuration from YAML file"""
+        with open(filepath, 'r') as f:
+            data = yaml.safe_load(f)
+        
+        return cls(
+            llm=LLMConfig(**data['llm']),
+            prompt_template=data['prompt_template'],
+            template_vars=data['template_vars'],
+            description=data.get('description', '')
+        )
+
+
+@dataclass
+class EmbeddingPipelineConfig(BasePipelineConfig):
+    """Configuration for embeddings-only pipeline"""
+    embedding: EmbeddingConfig
+    description: str = ""
+    
+    @classmethod
+    def from_yaml(cls, filepath: str) -> 'EmbeddingPipelineConfig':
+        """Load embedding pipeline configuration from YAML"""
+        with open(filepath, 'r') as f:
+            data = yaml.safe_load(f)
+        
+        return cls(
+            description=data.get('description', ''),
+            embedding=EmbeddingConfig(**data['embedding'])
+        )
+
+
+@dataclass
+class RAGPipelineConfig(BasePipelineConfig):
+    """Complete RAG pipeline configuration"""
+    llm: LLMConfig
+    embedding: EmbeddingConfig
+    database: DatabaseConfig
+    retrieval: RetrievalConfig
+    prompt_template: str
+    template_vars: List[str]
+    description: str = ""
     
     @classmethod
     def from_yaml(cls, filepath: str) -> 'RAGPipelineConfig':
@@ -132,13 +175,4 @@ class RAGPipelineConfig:
             template_vars=data['template_vars'],
             description=data.get('description', '')
         )
-    
-    def validate(self) -> bool:
-        """Validate the entire configuration"""
-        try:
-            # Validation happens in __post_init__ methods
-            return True
-        except Exception as e:
-            print(f"Configuration validation failed: {e}")
-            return False
         
