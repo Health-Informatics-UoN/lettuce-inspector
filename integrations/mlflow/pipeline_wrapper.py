@@ -11,6 +11,65 @@ from omop.omop_queries import query_vector
 from integrations.mlflow.config import RAGPipelineConfig 
 
 
+class ComponentBuilder: 
+    """Helper class for building pipeline components"""
+
+    @staticmethod
+    def build_llm(llm_config):
+        """Build LLM from configuration"""
+        from huggingface_hub import hf_hub_download
+        from llama_cpp import Llama
+        from components.models import local_models
+        
+        if llm_config.model_path:
+            model_path = llm_config.model_path
+        else:
+            model_path = hf_hub_download(**local_models[llm_config.model_name])
+        
+        return Llama(
+            model_path=model_path,
+            n_ctx=llm_config.context_length,
+            n_batch=llm_config.batch_size,
+            n_gpu_layers=-1,
+            verbose=True,
+            temperature=llm_config.temperature
+        )
+    
+    @staticmethod
+    def build_embedding_model(embedding_config):
+        """Build embedding model from configuration"""
+        from sentence_transformers import SentenceTransformer
+        
+        return SentenceTransformer(
+            embedding_config.model_name,
+            device=embedding_config.device
+        )
+
+    @staticmethod
+    def build_database_session(db_config):
+        """Build database session from configuration"""
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+        from sqlalchemy.sql import text
+        
+        connection_string = db_config.get_connection_string()
+        
+        engine = create_engine(
+            connection_string,
+            pool_size=db_config.pool_size,
+            pool_recycle=db_config.pool_recycle,
+            echo=db_config.echo_sql
+        )
+        
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
+        
+        # Test connection
+        session.execute(text("SELECT 1"))
+        
+        return session, engine
+
+    
 class MLflowBasePipeline(mlflow.pyfunc.PythonModel): 
     """Base class for mlflow pipelines"""
 
