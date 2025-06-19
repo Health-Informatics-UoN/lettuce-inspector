@@ -1,8 +1,6 @@
 import pandas as pd 
 import pytest 
 import mlflow 
-from llama_cpp import Llama
-from huggingface_hub import hf_hub_download
 
 from integrations.mlflow.pipeline_wrapper import MLflowLLMPipeline, MLflowRAGPipeline
 from integrations.mlflow.config import (
@@ -13,8 +11,7 @@ from integrations.mlflow.config import (
     LLMPipelineConfig, 
     RAGPipelineConfig
 )
-from evaluation.pipelines import LLMPipeline
-from components.models import local_models, LLMModel 
+from components.models import  LLMModel 
 from components.embeddings import get_embedding_model 
 
 

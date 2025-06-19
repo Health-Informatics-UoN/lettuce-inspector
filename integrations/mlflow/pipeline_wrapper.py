@@ -118,17 +118,19 @@ class MLflowLLMPipeline(MLflowBasePipeline):
         """Initialize all components from YAML configuration"""   
         if self._initialised:
             return
-    
-        from jinja2 import Environment
 
-        self.jinja_env = Environment()
-        self.prompt_template = self.jinja_env.from_string(self.config.prompt_template)
+        if not self.config.prompt_template:
+            raise ValueError(f"prompt_template is empty or None: {repr(self.config.prompt_template)}")
+
         self.llm = ComponentBuilder.build_llm(self.config.llm)
         
         self._initialised = True
 
     def _process_single_input(self, search_term: str):
-        prompt = self.prompt_template.render({self.config.template_vars[0]: search_term})
+        from jinja2 import Environment
+        jinja_env = Environment()
+        template = jinja_env.from_string(self.config.prompt_template)
+        prompt = template.render({self.config.template_vars[0]: search_term})
         response = self.llm.create_completion(
             prompt=prompt, 
             max_tokens=self.config.llm.max_tokens, 
@@ -161,17 +163,28 @@ class MLflowRAGPipeline(MLflowBasePipeline):
     
     def __init__(self, config: Optional[RAGPipelineConfig] = None):
         super().__init__(config)
+    
+    def __getstate__(self):
+        """Custom serialization - be very aggressive about what we save"""
+        # Only save essential serializable data
+        return {
+            'config': self.config,
+            'llm': None,
+            'embedding_model': None, 
+            'session': None,
+            'engine': None,
+            '_initialised': False
+        }
+
+    def __setstate__(self, state):
+        """Custom deserialization"""
+        self.__dict__.update(state)
 
     def _initialise_from_config(self): 
         """Initialise all components from YAML configuration"""   
         if self._initialised:
             return
     
-        from jinja2 import Environment
-
-        self.jinja_env = jinja_env = Environment()
-        self.prompt_template = jinja_env.from_string(self.config.prompt_template)
-
         self.llm = ComponentBuilder.build_llm(self.config.llm)
         self.embedding_model = ComponentBuilder.build_embedding_model(self.config.embedding)
 
@@ -182,6 +195,8 @@ class MLflowRAGPipeline(MLflowBasePipeline):
         self._initialised = True
 
     def _process_single_input(self, search_term: str): 
+        from jinja2 import Environment
+        
         embedding = self.embedding_model.encode(search_term)
         search_query = query_vector(
             embedding,
@@ -196,7 +211,9 @@ class MLflowRAGPipeline(MLflowBasePipeline):
             [search_term, retrieved_vecs]
         ))
 
-        prompt = self.prompt_template.render(template_context)
+        jinja_env = Environment()
+        template = jinja_env.from_string(self.config.prompt_template)
+        prompt = template.render(template_context)
         
         response = self.llm.create_completion(
             prompt=prompt,

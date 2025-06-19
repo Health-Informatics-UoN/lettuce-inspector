@@ -152,7 +152,8 @@ class MLflowEvaluationRunner():
             pipeline_yaml 
         )
 
-        pipeline = self._instantiate_pipeline_from_config(config, pipeline_type)
+        if pipeline is None: 
+            pipeline = self._instantiate_pipeline_from_config(config, pipeline_type)
 
         with mlflow.start_run() as run: 
             mlflow.log_dict(config.to_dict(), "pipeline_config.yaml")
