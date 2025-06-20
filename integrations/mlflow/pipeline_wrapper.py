@@ -165,8 +165,7 @@ class MLflowRAGPipeline(MLflowBasePipeline):
         super().__init__(config)
     
     def __getstate__(self):
-        """Custom serialization - be very aggressive about what we save"""
-        # Only save essential serializable data
+        """Custom serialization - only save essential serialisable data"""
         return {
             'config': self.config,
             'llm': None,
@@ -177,11 +176,11 @@ class MLflowRAGPipeline(MLflowBasePipeline):
         }
 
     def __setstate__(self, state):
-        """Custom deserialization"""
+        """Custom deserialisation"""
         self.__dict__.update(state)
 
     def _initialise_from_config(self): 
-        """Initialise all components from YAML configuration"""   
+        """Initialise all components from config object"""   
         if self._initialised:
             return
     

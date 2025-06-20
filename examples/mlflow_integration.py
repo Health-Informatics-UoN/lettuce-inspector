@@ -3,33 +3,30 @@ Minimal example of using MLflow integration with Lettuce pipelines.
 No dependency on EvaluationFramework.
 """
 import pandas as pd
-from llama_cpp import Llama
-from huggingface_hub import hf_hub_download
 
-from evaluation.pipelines import LLMPipeline
-from evaluation.metrics import UncasedMatch, FuzzyMatchRatio
-from evaluation.eval_tests import LLMPipelineTest
-from evaluation.eval_data_loaders import SingleInputCSVforLLM
-from evaluation.evaltypes import EvaluationFramework
-from components.models import local_models
-from options.pipeline_options import LLMModel
+from components.models import LLMModel 
+from components.embeddings import get_embedding_model 
+from integrations.mlflow.config import (
+    LLMConfig, 
+    EmbeddingConfig, 
+    RetrievalConfig, 
+    DatabaseConfig, 
+    RAGPipelineConfig
+)
+from integrations.mlflow.pipeline_wrapper import MLflowRAGPipeline 
+from integrations.mlflow.evaluation_runner import MLflowEvaluationRunner
 
 
 def main():
     # 1. Load a simple evaluation dataset
-    dataloader = SingleInputCSVforLLM("./evaluation/datasets/example.csv")
-    
-    # 2. Set up a pipeline
-    model_name = LLMModel.LLAMA_3_1_8B.value
-    llm = Llama(
-        hf_hub_download(**local_models[model_name]),
-        n_ctx=0,
-        n_batch=512,
-        model_kwargs={"n_gpu_layers": -1},
-        generation_kwargs={"max_tokens": 50, "temperature": 0}
-    )
-    
-    prompt_template_str = """You will be given the informal name of a medication. Respond only with the formal name of that medication, without any extra explanation.
+    eval_df = pd.read_csv("./evaluation/datasets/example.csv")
+
+    # 2. Define pipeline configuration 
+    prompt_template = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+    You are an assistant that suggests formal RxNorm names for a medication. You will be given the name of a medication, along with some possibly related RxNorm terms. If you do not think these terms are related, ignore them when making your suggestion.
+
+    Respond only with the formal name of the medication, without any extra explanation.
 
     Examples:
 
@@ -43,32 +40,37 @@ def main():
     Response: Ibuprofen
 
     Informal name: Aleve
-    Response: Naproxen
+    Response: Naproxen<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+    Possible related terms:
+    {% for result in vec_results %}
+    {{result.content}}
+    {% endfor %}
 
     Task:
+    Informal name: {{informal_name}}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
-    Informal name: {{informal_name}}<|eot_id|>
-    Response:"""
+    """
+    config = RAGPipelineConfig(
+        llm=LLMConfig(model_name=LLMModel.LLAMA_3_1_8B.value),
+        embedding=EmbeddingConfig(model_name=get_embedding_model("BGESMALL").info.path),
+        database=DatabaseConfig.from_env(),
+        retrieval=RetrievalConfig(vocab_ids=["RxNorm"], standard_concept=True), 
+        prompt_template=prompt_template, 
+        template_vars = ["informal_name", "vec_results"]
+    ) 
 
-    pipeline = LLMPipeline(
-        llm=llm,
-        prompt_template_str=prompt_template_str,
-        template_vars=["informal_name"]
+    # 3. Initialise the pipeline from the config 
+    pipeline = MLflowRAGPipeline(config)
+
+    # 4. Initialise the evaluation runner responsible for logging the experiment data
+    runner = MLflowEvaluationRunner(
+        experiment_name="mlflow_integration_example", 
+        tracking_uri="=http://localhost:5000"
     )
 
-    pipeline_test= LLMPipelineTest(model_name, pipeline, [UncasedMatch(), FuzzyMatchRatio()])
-    
-    evaluation_framework = EvaluationFramework(
-        name="Example MLflow",
-        pipeline_tests=[pipeline_test],
-        dataset=dataloader, 
-        description="Demonstration of running mlflow logging",
-        results_path="mlflow_example_output.json",
-        use_mlflow=True, 
-        experiment_name="lettuce-evaluation-mlflow-example"
-    )
-
-    evaluation_framework.run_evaluations()
+    # 5. Run the evaluation and the start the UI from command line 
+    breakpoint()
     
 
 if __name__ == "__main__":
