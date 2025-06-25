@@ -11,16 +11,19 @@ from integrations.mlflow.config import (
     EmbeddingConfig, 
     RetrievalConfig, 
     DatabaseConfig, 
+    LLMPipelineConfig, 
     RAGPipelineConfig
 )
-from integrations.mlflow.pipeline_wrapper import MLflowRAGPipeline 
+from integrations.mlflow.custom_metrics import make_simple_string_comparison_metrics
+from integrations.mlflow.pipeline_wrapper import MLflowRAGPipeline, MLflowLLMPipeline
 from integrations.mlflow.evaluation_runner import MLflowEvaluationRunner
 
 
 def main():
     # 1. Load a simple evaluation dataset
-    eval_df = pd.read_csv("./evaluation/datasets/example.csv")
-
+    eval_df = pd.read_csv(
+        "./evaluation/datasets/example.csv"
+    ).rename(columns={"expected_output": "targets"})
     # 2. Define pipeline configuration 
     prompt_template = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
@@ -51,27 +54,31 @@ def main():
     Informal name: {{informal_name}}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
     """
-    config = RAGPipelineConfig(
+    config = LLMPipelineConfig(
         llm=LLMConfig(model_name=LLMModel.LLAMA_3_1_8B.value),
-        embedding=EmbeddingConfig(model_name=get_embedding_model("BGESMALL").info.path),
-        database=DatabaseConfig.from_env(),
-        retrieval=RetrievalConfig(vocab_ids=["RxNorm"], standard_concept=True), 
         prompt_template=prompt_template, 
         template_vars = ["informal_name", "vec_results"]
     ) 
 
     # 3. Initialise the pipeline from the config 
-    pipeline = MLflowRAGPipeline(config)
+    pipeline = MLflowLLMPipeline(config)
 
     # 4. Initialise the evaluation runner responsible for logging the experiment data
     runner = MLflowEvaluationRunner(
         experiment_name="mlflow_integration_example", 
-        tracking_uri="=http://localhost:5000"
+        tracking_uri="./mlruns"
     )
 
     # 5. Run the evaluation and the start the UI from command line 
-    breakpoint()
+    runner.run_evaluation(
+        pipeline=pipeline, 
+        pipeline_type="llm", 
+        pipeline_name="example_llm_pipeline_mlflow_integration",
+        eval_df=eval_df,
+        metrics=make_simple_string_comparison_metrics()
+    )
     
 
 if __name__ == "__main__":
     main()
+    

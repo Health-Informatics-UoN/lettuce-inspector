@@ -1,10 +1,14 @@
 from typing import List, Optional
+from pathlib import Path
 import pandas as pd 
+from matplotlib import pyplot as plt 
+import seaborn as sns 
 import mlflow 
 from mlflow.metrics import MetricValue
 
 from integrations.mlflow.config import BasePipelineConfig, LLMPipelineConfig, EmbeddingPipelineConfig, RAGPipelineConfig 
 from integrations.mlflow.pipeline_wrapper import MLflowBasePipeline, MLflowLLMPipeline, MLflowEmbeddingPipeline, MLflowRAGPipeline
+from integrations.mlflow.plotting import plot_boxplot, plot_violinplot
 from integrations.mlflow.utils import generate_pip_requirements
 
 
@@ -167,8 +171,7 @@ class MLflowEvaluationRunner():
                 input_example=input_example, 
                 code_paths=code_paths
             )
-            
-            _ = mlflow.evaluate(
+            results = mlflow.evaluate(
                 model=model_info.model_uri,         
                 data=eval_df,                 
                 targets="targets",               
@@ -182,9 +185,10 @@ class MLflowEvaluationRunner():
                 }
             )
 
+            self.log_metric_distribution_figures(results.tables["eval_results_table"], metrics)
+
         return run 
         
-
     def evaluate_against_baseline(
         self, 
         baseline_model_run_id = None,  
@@ -196,3 +200,30 @@ class MLflowEvaluationRunner():
         Used to compare a candidate pipeline model against a baseline pipeline. 
         """
         pass 
+
+    def log_metric_distribution_figures(
+        self,
+        eval_results: pd.DataFrame, 
+        metrics: List[MetricValue]
+    ):
+        """
+        Plot the distribution of the each metric and log the plots as a artefact to mlflow. 
+
+        Input: 
+            eval_results: pandas.DataFrame 
+
+            metrics: List[MetricValue]
+
+
+        Returns: 
+            None 
+        """
+        metric_names = [metric.name for metric in metrics]
+        cols_to_plot = [col for col in eval_results.columns if col.split("/score")[0] in metric_names]
+
+        for col in cols_to_plot: 
+            fig, _ = plot_violinplot(eval_results[col], palette="pastel", x_label=col.split("/score")[0], y_label="Score")
+            mlflow.log_figure(fig, f"{col}_violinplot.png", save_kwargs={"dpi": 300, "bbox_inches": "tight"})
+
+            fig, _ = plot_boxplot(eval_results[col], palette="pastel", plot_scatter=True, x_label=col.split("/score")[0], y_label="Score")
+            mlflow.log_figure(fig, f"{col}_boxplot.png", save_kwargs={"dpi": 300, "bbox_inches": "tight"})

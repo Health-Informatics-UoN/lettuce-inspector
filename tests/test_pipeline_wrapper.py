@@ -131,3 +131,13 @@ def test_pyfunc_model_logging(tmp_path):
     model_uri = f"runs:/{run_id}/llm_model"
     loaded_model = mlflow.pyfunc.load_model(model_uri)
     assert loaded_model is not None
+
+
+def test_llm_pipeline_from_wrong_config_error(): 
+    pass 
+
+def test_rag_pipeline_from_wrong_config_error(): 
+    pass 
+
+def test_embeddings_pipeline_from_wrong_config_error(): 
+    pass 

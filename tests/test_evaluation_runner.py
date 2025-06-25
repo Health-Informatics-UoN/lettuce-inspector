@@ -1,3 +1,4 @@
+import numpy as np 
 import pandas as pd 
 import pytest 
 import mlflow 
@@ -5,7 +6,8 @@ import mlflow
 from components.models import LLMModel
 from components.embeddings import get_embedding_model 
 from integrations.mlflow.evaluation_runner import (
-    MLflowEvaluationRunner
+    MLflowEvaluationRunner, 
+    plot_histogram, plot_boxplot, plot_violinplot
 )
 from integrations.mlflow.pipeline_wrapper import MLflowLLMPipeline, MLflowRAGPipeline
 from integrations.mlflow.config import (

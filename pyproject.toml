@@ -17,6 +17,7 @@ dependencies = [
     "pgvector>=0.3.6",
     "psycopg2>=2.9.10",
     "rapidfuzz>=3.12.1",
+    "seaborn>=0.13.0", 
     "sentence-transformers>=3.4.1",
     "sqlalchemy>=2.0.38",
     "torch==2.2",
