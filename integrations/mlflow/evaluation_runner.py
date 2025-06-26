@@ -188,18 +188,6 @@ class MLflowEvaluationRunner():
             self.log_metric_distribution_figures(results.tables["eval_results_table"], metrics)
 
         return run 
-        
-    def evaluate_against_baseline(
-        self, 
-        baseline_model_run_id = None,  
-        static_result = None     
-    ): 
-        """
-        See MLflow docs - Model Evaluation section.
-
-        Used to compare a candidate pipeline model against a baseline pipeline. 
-        """
-        pass 
 
     def log_metric_distribution_figures(
         self,
