@@ -2,9 +2,12 @@ from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import Session
 from torch.functional import Tensor
 from evaluation.evaltypes import SingleResultPipeline
-from jinja2 import Template
+from jinja2 import Environment
 from llama_cpp import Llama
 from omop.omop_queries import query_vector
+
+
+jinja_env = Environment()
 
 
 class LLMPipeline(SingleResultPipeline):
@@ -13,7 +16,10 @@ class LLMPipeline(SingleResultPipeline):
     """
 
     def __init__(
-        self, llm: Llama, prompt_template: Template, template_vars: list[str]
+        self, 
+        llm: Llama, 
+        prompt_template_str: str, 
+        template_vars: list[str]
     ) -> None:
         """
         Initialises the LLMPipeline class
@@ -27,7 +33,8 @@ class LLMPipeline(SingleResultPipeline):
         template_vars: list[str]
             The variables inserted into the prompt template when rendered
         """
-        self.prompt_template = prompt_template
+        self.prompt_template_str = prompt_template_str
+        self.prompt_template = jinja_env.from_string(prompt_template_str)
         self._model = llm
         self._template_vars = template_vars
 
@@ -69,14 +76,15 @@ class RAGPipeline(SingleResultPipeline):
     def __init__(
         self,
         llm: Llama,
-        prompt_template: Template,
+        prompt_template_str: str, 
         template_vars: list[str],
         embedding_model: SentenceTransformer,
         session: Session,
         top_k: int = 5,
     ) -> None:
         self.llm = llm
-        self.prompt_template = prompt_template
+        self.prompt_template_str = prompt_template_str
+        self.prompt_template = jinja_env.from_string(prompt_template_str)
         self._llmodel = llm
         self._embedding_model = embedding_model
         self._template_vars = template_vars

@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 import time
-from typing import TypeVar, Generic, Any, List
+from typing import TypeVar, Generic, Any, List, Union 
 import json
 import os
+from jinja2 import Environment 
 
+
+jinja_env = Environment()
 
 class Metric(ABC):
     """Base class for all metrics."""
@@ -84,6 +87,18 @@ class SingleResultPipeline(TestPipeline):
     """
     Base class for pipelines returning a single result
     """
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Safely remove compiled prompt_template if it exists
+        if "prompt_template" in state:
+            del state["prompt_template"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # Recompile prompt_template if prompt_template_str exists
+        if hasattr(self, "prompt_template_str") and self.prompt_template_str:
+            self.prompt_template = jinja_env.from_string(self.prompt_template_str)
 
 
 class SingleResultPipelineTest(PipelineTest[SingleResultPipeline, SingleResultMetric]):
@@ -174,7 +189,7 @@ class EvaluationFramework:
         pipeline_tests: List[PipelineTest],
         dataset: EvalDataLoader,
         description: str,
-        results_path: str = "results.json",
+        results_path: str = "results.json"
     ):
         """
         Initialises the EvaluationFramework
