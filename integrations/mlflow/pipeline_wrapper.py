@@ -112,9 +112,8 @@ class MLflowLLMPipeline(MLflowBasePipeline):
 
     def __init__(self, config: LLMPipelineConfig):
         if config is not None and not isinstance(config, LLMPipelineConfig): 
-            raise TypeError(f"Expected config to be of type RAGPipelineConfig, not {type(config)}")
+            raise TypeError("Expected config to be of type LLMPipelineConfig")
         super().__init__(config)
-
 
     def _initialise_from_config(self): 
         """Initialize all components from YAML configuration"""   
@@ -146,7 +145,7 @@ class MLflowEmbeddingPipeline(MLflowBasePipeline):
     
     def __init__(self, config: EmbeddingPipelineConfig):
         if config is not None and not isinstance(config, EmbeddingPipelineConfig): 
-            raise TypeError(f"Expected config to be of type RAGPipelineConfig, not {type(config)}")
+            raise TypeError("Expected config to be of type EmbeddingPipelineConfig")
         super().__init__(config)
 
     def _initialise_components(self):
@@ -167,7 +166,7 @@ class MLflowRAGPipeline(MLflowBasePipeline):
     
     def __init__(self, config: Optional[RAGPipelineConfig] = None):
         if config is not None and not isinstance(config, RAGPipelineConfig): 
-            raise TypeError(f"Expected config to be of type RAGPipelineConfig, not {type(config)}")
+            raise TypeError("Expected config to be of type RAGPipelineConfig")
         super().__init__(config)
     
     def __getstate__(self):

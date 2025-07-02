@@ -2,13 +2,14 @@ import pandas as pd
 import pytest 
 import mlflow 
 
-from integrations.mlflow.pipeline_wrapper import MLflowLLMPipeline, MLflowRAGPipeline
+from integrations.mlflow.pipeline_wrapper import MLflowLLMPipeline, MLflowRAGPipeline, MLflowEmbeddingPipeline
 from integrations.mlflow.config import (
     LLMConfig, 
     EmbeddingConfig, 
     RetrievalConfig, 
     DatabaseConfig, 
     LLMPipelineConfig, 
+    EmbeddingPipelineConfig, 
     RAGPipelineConfig
 )
 from components.models import  LLMModel 
@@ -134,10 +135,31 @@ def test_pyfunc_model_logging(tmp_path):
 
 
 def test_llm_pipeline_from_wrong_config_error(): 
-    pass 
+    wrong_config = EmbeddingConfig(
+        model_name="my_model"
+    )
+    err_message="Expected config to be of type LLMPipelineConfig"
+    with pytest.raises(TypeError, match=err_message):
+        MLflowLLMPipeline(config=wrong_config)
+
 
 def test_rag_pipeline_from_wrong_config_error(): 
-    pass 
+    wrong_config = LLMPipelineConfig(
+        llm="my_model", 
+        prompt_template="fake_prompt",
+        template_vars=["fake_var"]
+    )
+    err_message = "Expected config to be of type RAGPipelineConfig"
+    with pytest.raises(TypeError, match=err_message):
+        MLflowRAGPipeline(config=wrong_config)
+
 
 def test_embeddings_pipeline_from_wrong_config_error(): 
-    pass 
+    wrong_config = LLMPipelineConfig(
+        llm="my_model", 
+        prompt_template="fake_prompt",
+        template_vars=["fake_var"]
+    )
+    err_message="Expected config to be of type EmbeddingPipelineConfig"
+    with pytest.raises(TypeError, match=err_message):
+        MLflowEmbeddingPipeline(config=wrong_config)
