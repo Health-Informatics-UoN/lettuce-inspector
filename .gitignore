@@ -172,3 +172,4 @@ cython_debug/
 .DS_Store
 /chroma_db
 *.db
+/evaluation/datasets
