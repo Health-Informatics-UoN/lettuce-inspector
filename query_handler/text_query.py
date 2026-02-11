@@ -1,21 +1,22 @@
+from typing import final
 import duckdb
-from typing import List
 from query_handler.duckdb_queries import bm25_query
 from query_handler.handler_type import ConceptIDQueryHandler
 
 # You might be wondering why I'm doing this in duckdb when I have an omop database already
 # It's quite simple - postgres doesn't have an in-built BM25 function
+@final
 class BmFileSearcher(ConceptIDQueryHandler):
     def __init__(
             self,
             db: duckdb.DuckDBPyConnection,
-            vocabulary_ids: List[str] | None=None,
+            vocabulary_ids: list[str] | None=None,
             top_k: int=10) -> None:
         self._db = db
         self._top_k = top_k
         self._vocabulary_ids = vocabulary_ids
 
-    def search(self, queries: List[str] | str) -> List[List[int]]:
+    def search(self, queries: list[str] | str) -> list[list[int]]:
         if isinstance(queries, str):
             queries = [queries]
 

@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any
 
 class QueryHandler(ABC):
     @abstractmethod
-    def search(self, queries: List[str]) -> List:
+    def search(self, queries: list[str]) -> list[Any]:
         pass
 
 class ConceptIDQueryHandler(QueryHandler):
     @abstractmethod
-    def search(self, queries: List[str]) -> List[List[int]]:
+    def search(self, queries: list[str]) -> list[list[int]]:
         pass

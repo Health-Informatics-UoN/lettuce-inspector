@@ -1,4 +1,3 @@
-from typing import List
 import duckdb
 from enum import Enum
 from torch import Tensor
@@ -15,7 +14,7 @@ def vector_search(
         embedding: Tensor,
         vector_type: str,
         vector_dim: int,
-        vocabulary_ids: List[str] | None,
+        vocabulary_ids: list[str] | None,
         top_k: int,
         ) -> duckdb.DuckDBPyRelation:
     if len(embedding) != vector_dim:
@@ -24,7 +23,6 @@ def vector_search(
 
     if vocabulary_ids is not None:
         vocab_filter = """
-        JOIN concepts ON vectors.concept_id = concepts.concept_id
         WHERE concepts.vocabulary_id IN $vocabulary_ids
         """
         query_params = {
@@ -41,9 +39,14 @@ def vector_search(
 
     query = f"""
     SELECT vectors.concept_id,
+           vectors.concept_name,
            {function_name}(vectors.embeddings::{vector_type}[{vector_dim}], 
-                            $embedding::{vector_type}[{vector_dim}]) as score
+                            $embedding::{vector_type}[{vector_dim}]) as score,
+           concepts.domain_id,
+           concepts.vocabulary_id,
+           concepts.concept_class_id
     FROM vectors
+    JOIN concepts ON vectors.concept_id = concepts.concept_id
     {vocab_filter}
     ORDER BY score {direction}
     LIMIT $top_k;
@@ -54,7 +57,7 @@ def vector_search(
 def bm25_query(
         con: duckdb.DuckDBPyConnection,
         query: str,
-        vocabulary_ids: List[str] | None,
+        vocabulary_ids: list[str] | None,
         top_k: int,
         ) -> duckdb.DuckDBPyRelation:
     if vocabulary_ids is not None:
@@ -73,7 +76,7 @@ def bm25_query(
                 }
 
     query = f"""
-    SELECT concept_id, concept_name, score
+    SELECT concept_id, concept_name, score, domain_id, vocabulary_id, concept_class_id
     FROM (
         SELECT *, fts_main_concepts.match_bm25(
             concept_id,
@@ -96,7 +99,7 @@ def rrf_query(
         vector_type: str,
         vector_dim: int,
         query: str,
-        vocabulary_ids: List[str] | None,
+        vocabulary_ids: list[str] | None,
         rrf_top_k: int,
         ) -> duckdb.DuckDBPyRelation:
     function_name, direction = similarity_function.value
