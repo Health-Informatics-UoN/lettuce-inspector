@@ -78,7 +78,12 @@ class SingleInputCSVforLLM(EvalDataLoader):
     The data loader splits the input_data into a list of lists for compatibility with LLM pipelines
     """
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(
+            self,
+            file_path: str,
+            input_column: str = 'input_data',
+            expected_output_column: str = 'expected_output',
+            ) -> None:
         """
         Initialises a SingleInputCSVforLLM
 
@@ -89,8 +94,8 @@ class SingleInputCSVforLLM(EvalDataLoader):
         """
         super().__init__(file_path)
         self.data = pd.read_csv(file_path)
-        self._input_data = self.load_input_data()
-        self._expected_output = self.load_expected_output()
+        self._input_data = self.load_input_data(input_column)
+        self._expected_output = self.load_expected_output(expected_output_column)
 
     @property
     def input_data(self) -> list:
@@ -106,7 +111,7 @@ class SingleInputCSVforLLM(EvalDataLoader):
         """
         return self._expected_output
 
-    def load_input_data(self) -> list:
+    def load_input_data(self, input_column: str) -> list:
         """
         Loads the input data column from the specified file
 
@@ -116,11 +121,11 @@ class SingleInputCSVforLLM(EvalDataLoader):
             A list of the input_data column, where each item is a length 1 list for compatibility with LLMPipelines
         """
         try:
-            return [[i] for i in self.data["input_data"]]
+            return [[i] for i in self.data[input_column]]
         except KeyError:
-            print(f"No column named 'input_data' in {self.file_path}")
+            print(f"No column named {input_column} in {self.file_path}")
 
-    def load_expected_output(self) -> list:
+    def load_expected_output(self, expected_output_column: str) -> list:
         """
         Loads the expected output column from the specified column
 
@@ -130,6 +135,6 @@ class SingleInputCSVforLLM(EvalDataLoader):
             A list of the expected_output column
         """
         try:
-            return list(self.data["expected_output"])
+            return list(self.data[expected_output_column])
         except KeyError:
-            print(f"No column named 'expected_output' in {self.file_path}")
+            print(f"No column named {expected_output_column} in {self.file_path}")
