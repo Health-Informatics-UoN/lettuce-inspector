@@ -9,7 +9,12 @@ class SingleInputSimpleCSV(EvalDataLoader):
     The file must have a column named 'input_data', each entry defining an input to a pipeline, and another column 'expected_output', defining the desired output for the matching input.
     """
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(
+            self,
+            file_path: str,
+            input_column: str = 'input_data',
+            expected_output_column: str = 'expected_output',
+            ) -> None:
         """
         Initialises a SingleInputSimpleCSV
 
@@ -20,8 +25,8 @@ class SingleInputSimpleCSV(EvalDataLoader):
         """
         super().__init__(file_path)
         self.data = pd.read_csv(file_path)
-        self._input_data = self.load_input_data()
-        self._expected_output = self.load_expected_output()
+        self._input_data = self.load_input_data(input_column)
+        self._expected_output = self.load_expected_output(expected_output_column)
 
     @property
     def input_data(self) -> list:
@@ -37,7 +42,7 @@ class SingleInputSimpleCSV(EvalDataLoader):
         """
         return self._expected_output
 
-    def load_input_data(self) -> list:
+    def load_input_data(self, input_column: str) -> list:
         """
         Loads the input data column from the specified file
 
@@ -47,11 +52,11 @@ class SingleInputSimpleCSV(EvalDataLoader):
             A list of the input_data column
         """
         try:
-            return self.data["input_data"].to_list()
+            return self.data[input_column].to_list()
         except KeyError:
-            print(f"No column named 'input_data' in {self.file_path}")
+            print(f"No column named {input_column} in {self.file_path}")
 
-    def load_expected_output(self) -> list:
+    def load_expected_output(self, expected_output_column: str) -> list:
         """
         Loads the expected output column from the specified column
 
@@ -61,9 +66,9 @@ class SingleInputSimpleCSV(EvalDataLoader):
             A list of the expected_output column
         """
         try:
-            return list(self.data["expected_output"])
+            return list(self.data[expected_output_column])
         except KeyError:
-            print(f"No column named 'expected_output' in {self.file_path}")
+            print(f"No column named {expected_output_column} in {self.file_path}")
 
 
 class SingleInputCSVforLLM(EvalDataLoader):
