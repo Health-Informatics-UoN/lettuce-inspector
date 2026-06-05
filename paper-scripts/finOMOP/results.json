@@ -1,0 +1,394 @@
+[
+  {
+    "Experiment": "BM25 test",
+    "Description": "\nTest run on first 10 finOMOP mappings\n\nDataset: First 10 FinOMOP mappings\n\n## Pipelines\nRetrieval: BM25, top 10\nGeneration: BM25 for RAG\n    - Gemma 3 12b\n\n\n## Metrics\nRetrieval: IDMatchInList\nGeneration: UncasedMatch, RelatedNameUncasedMatch\n",
+    "Time": 1770807999.14271,
+    "Results": [
+      {
+        "BM25 retrieval": {
+          "metric_descriptions": [
+            "Concept ID match in list: Calculates whether the desired concept_id is in the retrieved list"
+          ],
+          "results": [
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": true
+            },
+            {
+              "IDMatchInList": true
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": true
+            },
+            {
+              "IDMatchInList": false
+            }
+          ]
+        }
+      },
+      {
+        "Gemma RAG with BM25 (name only in prompt)": {
+          "metric_descriptions": [
+            "Uncased match: is the predicted response the same as the ground truth, ignoring character case",
+            null
+          ],
+          "results": [
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            }
+          ]
+        }
+      },
+      {
+        "Gemma RAG with BM25 (name and score in prompt)": {
+          "metric_descriptions": [
+            "Uncased match: is the predicted response the same as the ground truth, ignoring character case",
+            null
+          ],
+          "results": [
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            }
+          ]
+        }
+      },
+      {
+        "Gemma RAG with BM25 (concept details in prompt)": {
+          "metric_descriptions": [
+            "Uncased match: is the predicted response the same as the ground truth, ignoring character case",
+            null
+          ],
+          "results": [
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "Experiment": "BM25 test",
+    "Description": "\nTest run on first 10 finOMOP mappings\n\nDataset: First 10 FinOMOP mappings\n\n## Pipelines\nRetrieval: BM25, top 10\nGeneration: BM25 for RAG\n    - Gemma 3 12b\n\n\n## Metrics\nRetrieval: IDMatchInList\nGeneration: UncasedMatch, RelatedNameUncasedMatch\n",
+    "Time": 1770808173.6893194,
+    "Results": [
+      {
+        "BM25 retrieval": {
+          "metric_descriptions": [
+            "Concept ID match in list: Calculates whether the desired concept_id is in the retrieved list"
+          ],
+          "results": [
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": false
+            },
+            {
+              "IDMatchInList": true
+            },
+            {
+              "IDMatchInList": true
+            },
+            {
+              "IDMatchInList": true
+            },
+            {
+              "IDMatchInList": false
+            }
+          ]
+        }
+      },
+      {
+        "Gemma RAG with BM25 (name only in prompt)": {
+          "metric_descriptions": [
+            "Uncased match: is the predicted response the same as the ground truth, ignoring character case",
+            null
+          ],
+          "results": [
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            }
+          ]
+        }
+      },
+      {
+        "Gemma RAG with BM25 (name and score in prompt)": {
+          "metric_descriptions": [
+            "Uncased match: is the predicted response the same as the ground truth, ignoring character case",
+            null
+          ],
+          "results": [
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            }
+          ]
+        }
+      },
+      {
+        "Gemma RAG with BM25 (concept details in prompt)": {
+          "metric_descriptions": [
+            "Uncased match: is the predicted response the same as the ground truth, ignoring character case",
+            null
+          ],
+          "results": [
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 1.0,
+              "RelatedNameUncasedMatch": 1.0
+            },
+            {
+              "UncasedMatch": 0.0,
+              "RelatedNameUncasedMatch": 0.0
+            }
+          ]
+        }
+      }
+    ]
+  }
+]
