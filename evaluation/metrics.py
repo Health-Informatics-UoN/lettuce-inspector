@@ -524,7 +524,7 @@ class IDMatchInList(InformationRetrievalMetric):
     def description(self) -> str:
         return self._description
 
-def first_match_in_collection(target: list[Any], probe: Collection[Any]) -> int:
+def first_match_in_collection(target: Collection[Any], probe: list[Any]) -> int:
     """
     Given a target and a probe list, goes through the probe list and finds the first index where the probe list matches the target.
     If there's no match, returns -1
