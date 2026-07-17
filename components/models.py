@@ -1,8 +1,3 @@
-import logging
-from options.pipeline_options import LLMModel
-import torch
-
-
 local_models = {
     "llama-2-7b-chat": {
         "repo_id": "TheBloke/Llama-2-7B-Chat-GGUF",
@@ -16,9 +11,9 @@ local_models = {
         "repo_id": "QuantFactory/Meta-Llama-3-70B-Instruct-GGUF-v2",
         "filename": "Meta-Llama-3-70B-Instruct-v2.Q4_K_M.gguf",
     },
-    "gemma-7b": {
-        "repo_id": "MaziyarPanahi/gemma-7b-GGUF",
-        "filename": "gemma-7b.Q4_K_M.gguf",
+    "gemma-12b": {
+        "repo_id": "unsloth/gemma-3-12b-it-GGUF",
+        "filename": "gemma-3-12b-it-Q4_K_M.gguf",
     },
     "llama-3.1-8b": {
         "repo_id": "MaziyarPanahi/Meta-Llama-3.1-8B-Instruct-GGUF",
@@ -75,5 +70,13 @@ local_models = {
     "med-llama-3-8b-v4": {
         "repo_id": "bartowski/JSL-MedLlama-3-8B-v1.0-GGUF",
         "filename": "JSL-MedLlama-3-8B-v1.0-IQ3_M.gguf",
+    },
+    "phi-4_IQ4_XS": {
+        "repo_id": "bartowski/phi-4-GGUF",
+        "filename": "phi-4-IQ4_XS.gguf"
+    },
+    "qwen2.5-14b-instruct": {
+        "repo_id": "bartowski/Qwen2.5-14B-Instruct-GGUF",
+        "filename": "Qwen2.5-14B-Instruct-Q4_K_S.gguf"
     },
 }
