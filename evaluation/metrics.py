@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Collection
 
 from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import Session
@@ -448,6 +448,60 @@ class RelatedNamePrecision(InformationRetrievalMetric):
 
         return calc_precision(list(related_names), predicted)
 
+    @property
+    def description(self) -> str:
+        return self._description
+
+class IDMatchInList(InformationRetrievalMetric):
+    def __init__(
+            self,
+            connection: Session,
+            vocabulary_ids: list[str]
+            ) -> None:
+        self._description = "Concept ID match in list: Calculates whether the desired concept_id is in the retrieved list"
+        self._connection = connection
+        self._vocabulary_ids = vocabulary_ids
+
+    def calculate(self, predicted: list[int], actual: str) -> float:
+        actual_rows = self._connection.execute(query_ids_matching_name(actual, self._vocabulary_ids)).fetchall()
+        actual_ids = [res[0] for res in actual_rows]
+        return len(set(actual_ids).intersection(predicted)) != 0
+    
+    @property
+    def description(self) -> str:
+        return self._description
+
+def first_match_in_collection(target: list[Any], probe: Collection[Any]) -> int:
+    """
+    Given a target and a probe list, goes through the probe list and finds the first index where the probe list matches the target.
+    If there's no match, returns -1
+
+    Parameters
+    ----------
+    target: list[Any]
+        The list being probed for matches
+    probe: list[Any]
+    """
+    return next(i for i,v in enumerate(probe) if v in target)
+
+class IDMatchPositionInList(InformationRetrievalMetric):
+    def __init__(
+            self,
+            connection: Session,
+            vocabulary_ids: list[str]
+            ) -> None:
+        self._description = "Concept ID match in list: Calculates whether the desired concept_id is in the retrieved list, if so, returns the position"
+        self._connection = connection
+        self._vocabulary_ids = vocabulary_ids
+
+    def calculate(self, predicted: list[int], actual: str) -> int:
+        actual_rows = self._connection.execute(query_ids_matching_name(actual, self._vocabulary_ids)).fetchall()
+        actual_ids = [res[0] for res in actual_rows]
+        if len(set(actual_ids).intersection(predicted)) != 0:
+            return first_match_in_collection(predicted, actual_ids)
+        else:
+            return -1
+    
     @property
     def description(self) -> str:
         return self._description
